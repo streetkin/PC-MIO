@@ -567,11 +567,19 @@
             </div>
           </label>
 
-          <label class="col-span-2 p-3 rounded-xl border border-slate-200 hover:border-blue-300 bg-white cursor-pointer flex items-center space-x-2.5 transition">
+          <label class="p-3 rounded-xl border border-slate-200 hover:border-blue-300 bg-white cursor-pointer flex items-center space-x-2.5 transition">
+            <input type="checkbox" name="onboard-cat" value="dev" class="rounded text-blue-600 focus:ring-0">
+            <div>
+              <div class="font-bold text-slate-800">💻 Programmazione & AI</div>
+              <div class="text-[10px] text-slate-400">VS Code, Git, Python, Ollama</div>
+            </div>
+          </label>
+
+          <label class="p-3 rounded-xl border border-slate-200 hover:border-blue-300 bg-white cursor-pointer flex items-center space-x-2.5 transition">
             <input type="checkbox" name="onboard-cat" value="office" class="rounded text-blue-600 focus:ring-0">
             <div>
               <div class="font-bold text-slate-800">💼 Lavoro, Ufficio & Famiglia</div>
-              <div class="text-[10px] text-slate-400">Fogli Excel, fatture, foto dei ricordi, download importanti</div>
+              <div class="text-[10px] text-slate-400">Fogli Excel, fatture, foto, download</div>
             </div>
           </label>
 
@@ -681,6 +689,7 @@
       else if (cats.includes('gaming')) name = "Gaming";
       else if (cats.includes('music')) name = "Musica";
       else if (cats.includes('graphics')) name = "Creator";
+      else if (cats.includes('dev')) name = "Developer & AI";
       else if (cats.includes('office')) name = "Lavoro";
 
       try {

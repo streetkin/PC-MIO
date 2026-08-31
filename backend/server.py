@@ -196,6 +196,12 @@ def deduce_shield_rules(categories, notes=""):
             "path": os.path.join(user_home, "Documents") + " • OneDrive",
             "icon": "💼"
         })
+    if "dev" in categories or "coding" in categories or "ai" in categories:
+        base_protected.append({
+            "title": "Sviluppo Software, Codice & Modelli AI",
+            "path": r"Git Repo • VS Code • .ollama\models • Python venv",
+            "icon": "💻"
+        })
 
     # Deduzione intelligente da note testuali (euristica e semantica)
     n = notes.lower()
@@ -205,8 +211,8 @@ def deduce_shield_rules(categories, notes=""):
         base_protected.append({"title": "File e Asset Blender 3D (.blend)", "path": "Asset e Sceneggiature 3D", "icon": "🧊"})
     if "foto" in n or "ricordi" in n:
         base_protected.append({"title": "Archivio Fotografico Personale", "path": os.path.join(user_home, "Pictures"), "icon": "📸"})
-    if "codice" in n or "github" in n or "programmazion" in n:
-        base_protected.append({"title": "Repository e Codice Sorgente", "path": "Cartelle Progetti Dev & Git", "icon": "💻"})
+    if "codice" in n or "github" in n or "programmazion" in n or "sviluppo" in n or "ai" in n:
+        base_protected.append({"title": "Repository, Script & Pesi Modelli AI", "path": "Cartelle Progetti Dev, Git & Ambienti AI", "icon": "🤖"})
 
     return base_protected
 
