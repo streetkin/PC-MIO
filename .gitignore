@@ -1,0 +1,17 @@
+# Python & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.spec
+
+# PyInstaller Build Artifacts (teniamo il codice sorgente leggero)
+build/
+dist/
+
+# Ambienti virtuali
+venv/
+env/
+.env
+
+# Log di sistema
+*.log

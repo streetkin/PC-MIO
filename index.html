@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PC MIO - Assistente di Ottimizzazione e Sicurezza</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #F8FAFC;
+      color: #0F172A;
+    }
+
+    /* Google Style Clean Card */
+    .g-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 20px;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+    }
+    .g-card:hover {
+      box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.07);
+      border-color: #CBD5E1;
+    }
+
+    /* Google Material Buttons */
+    .btn-primary {
+      background-color: #1A73E8;
+      color: #FFFFFF;
+      font-weight: 600;
+      border-radius: 9999px;
+      padding: 10px 24px;
+      transition: all 0.15s ease;
+      box-shadow: 0 2px 6px rgba(26, 115, 232, 0.25);
+    }
+    .btn-primary:hover {
+      background-color: #1557B0;
+      box-shadow: 0 4px 10px rgba(26, 115, 232, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background-color: #F1F5F9;
+      color: #334155;
+      font-weight: 600;
+      border-radius: 9999px;
+      padding: 8px 18px;
+      border: 1px solid #E2E8F0;
+      transition: all 0.15s ease;
+    }
+    .btn-secondary:hover {
+      background-color: #E2E8F0;
+      color: #0F172A;
+    }
+
+    .btn-danger {
+      background-color: #EF4444;
+      color: #FFFFFF;
+      font-weight: 600;
+      border-radius: 9999px;
+      padding: 8px 18px;
+      transition: all 0.15s ease;
+    }
+    .btn-danger:hover {
+      background-color: #DC2626;
+    }
+
+    /* iOS / Google Style Clean Switch */
+    .g-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .g-switch input { opacity: 0; width: 0; height: 0; }
+    .g-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #CBD5E1;
+      transition: .25s;
+      border-radius: 24px;
+    }
+    .g-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px; width: 18px;
+      left: 3px; bottom: 3px;
+      background-color: white;
+      transition: .25s;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    input:checked + .g-slider { background-color: #10B981; }
+    input:checked + .g-slider:before { transform: translateX(20px); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+  <!-- TOP HEADER GOOGLE CLEAN -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-3 flex items-center justify-between shadow-xs">
+    
+    <!-- Logo & Nome Prodotto -->
+    <div class="flex items-center space-x-3">
+      <img src="/logo.png" alt="PC MIO Logo" class="w-11 h-11 object-contain drop-shadow-sm transition-transform hover:scale-105">
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-extrabold text-lg tracking-tight text-slate-900">PC MIO</span>
+          <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Locale & Privato</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stato del Sistema & Cassaforte Quarantena -->
+    <div class="flex items-center space-x-3">
+      <div class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs text-slate-600 font-medium">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="header-ollama-label">Cervello AI: Ollama locale attivo</span>
+      </div>
+
+      <!-- Pulsante Cassaforte (Quarantena) -->
+      <button onclick="apriCassettoQuarantena()" class="btn-secondary flex items-center space-x-2 text-xs">
+        <span>🛡️ Cassaforte Sicura</span>
+        <span id="badge-quarantine-count" class="px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold">0 file</span>
+      </button>
+    </div>
+
+  </header>
+
+  <!-- CONTENUTO PRINCIPALE -->
+  <main class="flex-1 max-w-4xl w-full mx-auto p-6 md:p-8 space-y-6">
+
+    <!-- HERO CARD: STATO DEL COMPUTER A COLPO D'OCCHIO -->
+    <div class="g-card p-7 md:p-8 text-center space-y-5 relative overflow-hidden">
+      
+      <!-- Icona Circolare di Stato -->
+      <div class="flex justify-center">
+        <div id="hero-status-icon-box" class="w-20 h-20 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center text-4xl shadow-inner transition-all duration-300">
+          ✓
+        </div>
+      </div>
+
+      <div class="space-y-1.5 max-w-md mx-auto">
+        <h1 id="hero-status-title" class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+          Il tuo computer è in salute
+        </h1>
+        <p id="hero-status-subtitle" class="text-sm text-slate-500 leading-relaxed">
+          Nessuna minaccia e spazio ottimizzato. Fai una scansione per verificare la velocità di avvio e le applicazioni.
+        </p>
+      </div>
+
+      <!-- Grande Pulsante Scansione Google Style -->
+      <div class="pt-2">
+        <button onclick="avviaScansione()" id="btn-scan-main" class="btn-primary text-sm px-8 py-3.5 flex items-center space-x-2.5 mx-auto font-medium">
+          <span class="text-base">🔍</span>
+          <span id="btn-scan-text">ANALIZZA IL MIO PC</span>
+        </button>
+      </div>
+
+      <!-- Barra di Progresso Scansione -->
+      <div id="scan-progress-box" class="max-w-md mx-auto space-y-2 hidden pt-2">
+        <div class="flex justify-between text-xs text-slate-500 font-medium">
+          <span id="scan-phase-text">Analisi del registro e dei percorsi...</span>
+          <span id="scan-percent-text">45%</span>
+        </div>
+        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+          <div id="scan-progress-bar" class="bg-blue-600 h-full rounded-full transition-all duration-300" style="width: 45%;"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SEZIONE RISULTATI ED AZIONI IMMEDIATE (SOLO SE PRESENTI) -->
+    <div id="results-container" class="space-y-4">
+      
+      <div class="flex items-center justify-between px-1">
+        <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+          <span>Elementi da Gestire</span>
+          <span id="results-count-badge" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">2 trovati</span>
+        </h2>
+        <span class="text-xs text-slate-400">Risoluzione guidata a 1 clic</span>
+      </div>
+
+      <!-- LISTA DELLE SCHEDE AZIONABILI -->
+      <div id="cards-list" class="space-y-3">
+        <!-- Popolato dinamicamente da JavaScript -->
+      </div>
+
+    </div>
+
+    <!-- INFO STATISTICHE DISCO & MEMORIA SOVRANE -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-medium text-slate-600">
+      <div class="g-card p-4 flex items-center space-x-3">
+        <span class="text-2xl">💾</span>
+        <div>
+          <div class="text-slate-400 text-[11px]">Spazio Libero su Disco C:</div>
+          <div id="stat-disk-free" class="text-slate-900 font-bold text-sm">147.5 GB disponibili</div>
+        </div>
+      </div>
+
+      <div class="g-card p-4 flex items-center space-x-3">
+        <span class="text-2xl">⚡</span>
+        <div>
+          <div class="text-slate-400 text-[11px]">Protezione Dati & Progetti:</div>
+          <div class="text-emerald-700 font-bold text-sm">198 Plugin DAW al sicuro</div>
+        </div>
+      </div>
+
+      <div class="g-card p-4 flex items-center space-x-3">
+        <span class="text-2xl">🧠</span>
+        <div>
+          <div class="text-slate-400 text-[11px]">Memoria Locale Appresa:</div>
+          <div id="stat-skills-count" class="text-slate-900 font-bold text-sm">5 Pattern memorizzati</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- MODALE: GESTIONE AVVIO WINDOWS (INTERRUTTORI ON/OFF)     -->
+  <!-- ======================================================== -->
+  <div id="modal-startup" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="g-card max-w-lg w-full p-6 space-y-5 shadow-2xl">
+      
+      <div class="flex items-start justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+            ⚡
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">App all'Avvio di Windows</h3>
+            <p class="text-xs text-slate-500">Spegni quelle che non ti servono per accendere il PC in pochi secondi.</p>
+          </div>
+        </div>
+        <button onclick="chiudiModale('modal-startup')" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-sm font-bold transition">✕</button>
+      </div>
+
+      <!-- Elenco delle App con Toggle ON/OFF -->
+      <div id="startup-apps-list" class="divide-y divide-slate-100 max-h-72 overflow-y-auto">
+        <!-- Generato dinamicamente -->
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button onclick="chiudiModale('modal-startup')" class="btn-primary text-xs">
+          Ho Fatto, Chiudi
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODALE: PROTEZIONE FILE SENSIBILI DESKTOP                -->
+  <!-- ======================================================== -->
+  <div id="modal-privacy" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="g-card max-w-lg w-full p-6 space-y-4 shadow-2xl">
+      
+      <div class="flex items-start justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-xl">
+            🔒
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Protezione Credenziali Desktop</h3>
+            <p class="text-xs text-slate-500">File riservati trovati sul tuo desktop.</p>
+          </div>
+        </div>
+        <button onclick="chiudiModale('modal-privacy')" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-sm font-bold transition">✕</button>
+      </div>
+
+      <div class="p-3.5 bg-slate-50 rounded-xl text-xs text-slate-700 space-y-2 border border-slate-200">
+        <div class="font-semibold text-slate-900">File individuati sul Desktop:</div>
+        <ul class="list-disc list-inside space-y-1 text-slate-600 font-mono text-[11px]">
+          <li>Cartella: <code>IONOS</code> (contiene certificati e chiavi SSL .key)</li>
+          <li>File: <code>Client secret - T-Routex.txt</code> (password API in chiaro)</li>
+        </ul>
+      </div>
+
+      <div class="space-y-2 text-xs text-slate-600 leading-relaxed">
+        <p><strong>Cosa ti consigliamo di fare:</strong></p>
+        <div class="space-y-2">
+          <div class="p-3 rounded-xl bg-white border border-slate-200 flex items-start space-x-2.5">
+            <span class="text-base">📁</span>
+            <div>
+              <div class="font-bold text-slate-800">Sposta su Hard Disk esterno o USB</div>
+              <div class="text-[11px] text-slate-500">Tieni le chiavi SSL e le password fuori dal Desktop per evitare che programmi o browser possano leggerle.</div>
+            </div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-white border border-slate-200 flex items-start space-x-2.5">
+            <span class="text-base">🔑</span>
+            <div>
+              <div class="font-bold text-slate-800">Usa un Password Manager (es. Bitwarden o Keepass)</div>
+              <div class="text-[11px] text-slate-500">Non lasciare mai token di autenticazione o "Client Secret" in file di testo non protetti.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button onclick="chiudiModale('modal-privacy')" class="btn-primary text-xs">
+          Ho Capito, Me Ne Occupo Io
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- CASSETTO CASSAFORTE QUARANTENA (RIPRISTINO IN 1 CLIC)    -->
+  <!-- ======================================================== -->
+  <div id="modal-quarantine" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="g-card max-w-lg w-full p-6 space-y-4 shadow-2xl">
+      
+      <div class="flex items-start justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+            🛡️
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Cassaforte di Sicurezza (Quarantena)</h3>
+            <p class="text-xs text-slate-500">I file rimossi vengono tenuti qui al sicuro per 14 giorni.</p>
+          </div>
+        </div>
+        <button onclick="chiudiModale('modal-quarantine')" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-sm font-bold transition">✕</button>
+      </div>
+
+      <div id="quarantine-vault-body" class="p-4 bg-slate-50 rounded-xl text-center space-y-2 border border-slate-200">
+        <div id="quarantine-empty-msg" class="text-xs text-slate-500">
+          La cassaforte è attualmente vuota. Nessun file in attesa di auto-eliminazione.
+        </div>
+        <div id="quarantine-active-msg" class="hidden space-y-3 text-left">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-slate-800" id="quarantine-active-label">16.9 MB conservati</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">REVERSIBILE</span>
+          </div>
+          <p class="text-[11px] text-slate-500">Puoi annullare l'ultima operazione e rimettere i file al loro posto originale in qualsiasi momento.</p>
+          <div class="flex space-x-2 pt-1">
+            <button onclick="eseguiRollback()" class="btn-secondary text-xs w-full">Ripristina File (Rollback)</button>
+            <button onclick="svuotaQuarantena()" class="btn-danger text-xs w-full">Svuota Adesso</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-1">
+        <button onclick="chiudiModale('modal-quarantine')" class="btn-secondary text-xs">
+          Chiudi
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT GOOGLE STYLE ENGINE -->
+  <script>
+    const API_BASE = "http://127.0.0.1:8765";
+    let CURRENT_FINDINGS = [];
+    let STARTUP_APPS = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      aggiornaDatiSistema();
+      caricaStatoQuarantena();
+      setTimeout(avviaScansioneSilenziosa, 400);
+    });
+
+    async function aggiornaDatiSistema() {
+      try {
+        const res = await fetch(`${API_BASE}/api/status`);
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('stat-disk-free').innerText = `${data.disk_free_gb} GB liberi (${data.disk_total_gb} GB tot)`;
+          if (data.ollama && data.ollama.online) {
+            document.getElementById('header-ollama-label').innerText = `AI Locale: ${data.ollama.current_model}`;
+          }
+        }
+      } catch (e) {
+        console.warn("Backend non raggiungibile:", e);
+      }
+    }
+
+    async function caricaStatoQuarantena() {
+      try {
+        const res = await fetch(`${API_BASE}/api/quarantine/status`);
+        if (res.ok) {
+          const data = await res.json();
+          const badge = document.getElementById('badge-quarantine-count');
+          const emptyMsg = document.getElementById('quarantine-empty-msg');
+          const activeMsg = document.getElementById('quarantine-active-msg');
+          const activeLabel = document.getElementById('quarantine-active-label');
+
+          if (data.total_mb > 0) {
+            badge.innerText = `${data.total_mb} MB`;
+            badge.className = "px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold";
+            emptyMsg.classList.add('hidden');
+            activeMsg.classList.remove('hidden');
+            activeLabel.innerText = `${data.total_mb} MB in quarantena (${data.files_count} file)`;
+          } else {
+            badge.innerText = "0 file";
+            badge.className = "px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold";
+            emptyMsg.classList.remove('hidden');
+            activeMsg.classList.add('hidden');
+          }
+        }
+      } catch (e) {
+        console.warn("Errore quarantena:", e);
+      }
+    }
+
+    async function avviaScansioneSilenziosa() {
+      try {
+        const res = await fetch(`${API_BASE}/api/scan`, { method: "POST" });
+        if (res.ok) {
+          const data = await res.json();
+          renderizzaRisultati(data);
+        }
+      } catch (e) {
+        console.warn("Errore scansione iniziale:", e);
+      }
+    }
+
+    async function avviaScansione() {
+      const btn = document.getElementById('btn-scan-main');
+      const progressBox = document.getElementById('scan-progress-box');
+      const progressBar = document.getElementById('scan-progress-bar');
+      const progressPhase = document.getElementById('scan-phase-text');
+      const progressPercent = document.getElementById('scan-percent-text');
+
+      btn.classList.add('opacity-50', 'pointer-events-none');
+      progressBox.classList.remove('hidden');
+      progressBar.style.width = "25%"; progressPercent.innerText = "25%"; progressPhase.innerText = "Verifica programmi e percorsi...";
+
+      setTimeout(() => {
+        progressBar.style.width = "60%"; progressPercent.innerText = "60%"; progressPhase.innerText = "Controllo registro avvio e sicurezza...";
+      }, 500);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/scan`, { method: "POST" });
+        if (res.ok) {
+          const data = await res.json();
+          setTimeout(() => {
+            progressBar.style.width = "100%"; progressPercent.innerText = "100%"; progressPhase.innerText = "Analisi completata!";
+          }, 900);
+
+          setTimeout(() => {
+            progressBox.classList.add('hidden');
+            btn.classList.remove('opacity-50', 'pointer-events-none');
+            renderizzaRisultati(data);
+          }, 1400);
+        }
+      } catch (e) {
+        progressPhase.innerText = "Errore durante la scansione";
+        btn.classList.remove('opacity-50', 'pointer-events-none');
+      }
+    }
+
+    function renderizzaRisultati(data) {
+      CURRENT_FINDINGS = data.findings || [];
+      const cardsList = document.getElementById('cards-list');
+      cardsList.innerHTML = "";
+
+      const countBadge = document.getElementById('results-count-badge');
+      const heroIconBox = document.getElementById('hero-status-icon-box');
+      const heroTitle = document.getElementById('hero-status-title');
+      const heroSubtitle = document.getElementById('hero-status-subtitle');
+
+      countBadge.innerText = `${CURRENT_FINDINGS.length} trovati`;
+
+      if (CURRENT_FINDINGS.length === 0) {
+        heroIconBox.className = "w-20 h-20 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center text-4xl text-emerald-600 shadow-inner";
+        heroIconBox.innerText = "✓";
+        heroTitle.innerText = "Il tuo PC è perfettamente in forma!";
+        heroSubtitle.innerText = "Nessun residuo, file sensibile o rallentamento dell'avvio rilevato. Ottimo lavoro.";
+        document.getElementById('results-container').classList.add('hidden');
+        return;
+      } else {
+        document.getElementById('results-container').classList.remove('hidden');
+        heroIconBox.className = "w-20 h-20 rounded-full bg-amber-50 border-2 border-amber-200 flex items-center justify-center text-3xl text-amber-600 shadow-inner";
+        heroIconBox.innerText = "⚡";
+        heroTitle.innerText = `${CURRENT_FINDINGS.length} Ottimizzazioni Consigliate`;
+        heroSubtitle.innerText = "Ecco le azioni semplici che puoi compiere adesso per velocizzare e proteggere il computer.";
+      }
+
+      CURRENT_FINDINGS.forEach(f => {
+        const card = document.createElement('div');
+        card.className = "g-card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4";
+
+        let actionButtonHtml = "";
+        let badgeColor = "bg-blue-50 text-blue-700 border-blue-200";
+        let icon = "📋";
+
+        if (f.id === "startup_optimizer") {
+          icon = "🚀";
+          badgeColor = "bg-amber-50 text-amber-700 border-amber-200";
+          actionButtonHtml = `
+            <button onclick="apriGestioneAvvio()" class="btn-primary text-xs shrink-0 flex items-center space-x-1.5 bg-amber-600 hover:bg-amber-700 shadow-amber-600/20">
+              <span>Gestisci Avvio</span>
+              <span>➔</span>
+            </button>
+          `;
+        } else if (f.id === "desktop_security") {
+          icon = "🔒";
+          badgeColor = "bg-red-50 text-red-700 border-red-200";
+          actionButtonHtml = `
+            <button onclick="apriProtezionePrivacy()" class="btn-primary text-xs shrink-0 flex items-center space-x-1.5 bg-red-600 hover:bg-red-700 shadow-red-600/20">
+              <span>Proteggi File</span>
+              <span>➔</span>
+            </button>
+          `;
+        } else {
+          icon = "🧹";
+          badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
+          actionButtonHtml = `
+            <button onclick="eseguiPuliziaSingola('${f.id}')" class="btn-primary text-xs shrink-0 flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20">
+              <span>Pulisci (${f.size_mb} MB)</span>
+              <span>✓</span>
+            </button>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="flex items-start space-x-3.5">
+            <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-lg shrink-0 mt-0.5">
+              ${icon}
+            </div>
+            <div class="space-y-1">
+              <div class="flex items-center space-x-2">
+                <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border ${badgeColor}">${f.risk}</span>
+                <h3 class="font-bold text-slate-900 text-sm">${f.title}</h3>
+              </div>
+              <p class="text-xs text-slate-500 leading-relaxed max-w-xl">${f.description}</p>
+            </div>
+          </div>
+          <div class="self-end md:self-center">
+            ${actionButtonHtml}
+          </div>
+        `;
+        cardsList.appendChild(card);
+      });
+    }
+
+    // --- GESTIONE MODALE AVVIO WINDOWS ---
+    async function apriGestioneAvvio() {
+      try {
+        const res = await fetch(`${API_BASE}/api/startup/list`);
+        if (res.ok) {
+          const data = await res.json();
+          STARTUP_APPS = data.apps || [];
+          renderizzaAppAvvio(STARTUP_APPS);
+          document.getElementById('modal-startup').classList.remove('hidden');
+        }
+      } catch (e) {
+        alert("Errore nel caricamento delle applicazioni di avvio.");
+      }
+    }
+
+    function renderizzaAppAvvio(apps) {
+      const container = document.getElementById('startup-apps-list');
+      container.innerHTML = "";
+
+      if (apps.length === 0) {
+        container.innerHTML = "<div class='p-4 text-center text-xs text-slate-400'>Nessuna applicazione impostata per l'avvio automatico.</div>";
+        return;
+      }
+
+      apps.forEach(app => {
+        const row = document.createElement('div');
+        row.className = "py-3 flex items-center justify-between";
+        row.innerHTML = `
+          <div class="space-y-0.5 pr-4">
+            <div class="font-bold text-slate-800 text-xs">${app.name}</div>
+            <div class="text-[11px] text-slate-400 truncate max-w-xs">${app.command}</div>
+          </div>
+          <label class="g-switch shrink-0">
+            <input type="checkbox" ${app.enabled ? 'checked' : ''} onchange="toggleAppAvvio('${app.name}', this.checked)">
+            <span class="g-slider"></span>
+          </label>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    async function toggleAppAvvio(appName, newState) {
+      try {
+        const res = await fetch(`${API_BASE}/api/startup/toggle`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: appName, enable: newState })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          renderizzaAppAvvio(data.apps || []);
+          avviaScansioneSilenziosa();
+        }
+      } catch (e) {
+        alert("Errore durante la modifica dell'applicazione.");
+      }
+    }
+
+    // --- GESTIONE PRIVACY DESKTOP ---
+    function apriProtezionePrivacy() {
+      document.getElementById('modal-privacy').classList.remove('hidden');
+    }
+
+    // --- CASSETTO CASSAFORTE / QUARANTENA ---
+    function apriCassettoQuarantena() {
+      caricaStatoQuarantena();
+      document.getElementById('modal-quarantine').classList.remove('hidden');
+    }
+
+    function chiudiModale(modalId) {
+      document.getElementById(modalId).classList.add('hidden');
+    }
+
+    async function eseguiPuliziaSingola(itemId) {
+      if (!confirm("Confermi di voler mettere in sicurezza questo elemento nella Quarantena di PC MIO? (Ripristinabile in 1 clic per 14 giorni)")) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/quarantine`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ selected_ids: [itemId] })
+        });
+        const result = await res.json();
+        if (result.success) {
+          alert(`Elemento messo in sicurezza. Spazio liberato: ${result.freed_mb} MB.`);
+          caricaStatoQuarantena();
+          aggiornaDatiSistema();
+          avviaScansioneSilenziosa();
+        }
+      } catch (e) {
+        alert("Errore durante la pulizia: " + e.message);
+      }
+    }
+
+    async function eseguiRollback() {
+      if (!confirm("Vuoi ripristinare tutti i file dalla Quarantena ai loro percorsi originari?")) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/rollback`, { method: "POST" });
+        const result = await res.json();
+        if (result.success) {
+          alert(`Rollback completato! ${result.restored_count} elementi ripristinati.`);
+          caricaStatoQuarantena();
+          aggiornaDatiSistema();
+          avviaScansioneSilenziosa();
+        }
+      } catch (e) {
+        alert("Errore durante il Rollback: " + e.message);
+      }
+    }
+
+    async function svuotaQuarantena() {
+      if (!confirm("ATTENZIONE: I file in quarantena saranno eliminati definitivamente dal disco. Non potrai più annullare l'operazione. Procedere?")) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/quarantine/purge`, { method: "POST" });
+        const result = await res.json();
+        if (result.success) {
+          alert("Quarantena svuotata definitivamente con successo!");
+          caricaStatoQuarantena();
+          aggiornaDatiSistema();
+        }
+      } catch (e) {
+        alert("Errore durante lo svuotamento: " + e.message);
+      }
+    }
+  </script>
+</body>
+</html>
