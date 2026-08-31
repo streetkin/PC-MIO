@@ -1,47 +1,77 @@
-# ⚡ GhostTrace AI — Privacy-First Local AI System Auditor & Optimizer
+<div align="center">
 
-> **Audit del PC trasparente, intelligente e 100% offline.**  
-> Nessuna telemetria, nessun cloud, nessun abbonamento. Alimentato dal tuo modello locale (Ollama).
+  <img src="logo.png" alt="PC MIO Logo" width="160" />
+
+  # PC MIO
+  ### Il Tuo Assistente di Ottimizzazione e Sicurezza con AI Locale
+
+  [![Windows](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-blue.svg?style=flat-square&logo=windows)](https://github.com/streetkin/PC-MIO)
+  [![AI](https://img.shields.io/badge/AI-Ollama%20Locale%20(100%25%20Privato)-emerald.svg?style=flat-square&logo=ollama)](https://ollama.ai)
+  [![Design](https://img.shields.io/badge/Style-Google%20Clean%20Material%203-blueviolet.svg?style=flat-square)](https://github.com/streetkin/PC-MIO)
+  [![License](https://img.shields.io/badge/Made%20in-Italy%20%F0%9F%87%AE%F0%9F%87%B9-red.svg?style=flat-square)](https://github.com/streetkin/PC-MIO)
+
+  <p align="center">
+    <b>Trasparente. Rassicurante. 100% Locale e Sovrano sui Tuoi Dati.</b><br/>
+    Nessun cloud, nessun abbonamento, nessuna cancellazione a freddo senza controllo.
+  </p>
+
+</div>
 
 ---
 
-## 🌟 La Visione
+## 🌟 Caratteristiche Principali
 
-La maggior parte dei software di pulizia esistenti sono scatole nere che cancellano file a caso o basati su elenchi rigidi.  
-**GhostTrace AI** introduce un assistente sistemistico intelligente che:
-1. **Analizza in sola lettura** il file system, i registri e i software realmente installati.
-2. **Usa l'IA Locale (Ollama)** per ragionare sulle discrepanze e scovare residui, cartelle orfane e file anomali.
-3. **Genera un `REPORT.md` chiaro** in linguaggio naturale con spiegazioni sul perché ogni singolo file o cartella è lì.
-4. **Applica solo le modifiche approvate** con semplici caselle di spunta (checkbox).
-5. **Non cancella a freddo:** sposta i file in una **Quarantena Reversibile** con ripristino (Rollback) in 1 clic.
-6. **Impara autonomamente:** ogni report arricchisce la base di conoscenza locale dell'IA con i pattern di impronta dei vari programmi.
+* 🔍 **Analisi a 1 Clic (Stile Google Clean):** Niente menu dispersivi o gergo da hacker. Un unico stato del computer e soluzioni immediate a portata di mano.
+* 🚀 **Gestore Avvio di Windows Integrato:** Individua le applicazioni in background che rallentano l'accensione del PC e ti permette di disattivarle con un semplice interruttore ON/OFF.
+* 🛡️ **Cassaforte di Sicurezza (Quarantena a 14 Giorni):** I file non vengono mai distrutti a freddo. Vengono custoditi in una stanza di quarantena con **Rollback in 1 clic** e auto-eliminazione programmata.
+* 🧠 **Cervello AI con Auto-Apprendimento:** Utilizza un modello locale open source (Ollama: `qwen2.5-coder` / `llama3.2`) e memorizza nel database SQLite locale le impronte approvate, migliorando a ogni scansione.
+* 🔒 **Guardrail di Protezione Totale:** Protegge in modo rigoroso file di sistema (`C:\Windows`), progetti utente e cartelle VST3/DAW audio da qualsiasi cancellazione errata.
 
 ---
 
-## 🧱 Architettura del Sistema
+## 💻 Come Avviare o Installare
+
+### Metodo 1: Installer Ufficiale Windows
+Puoi compilare o eseguire l'installer dedicato:
+* Generato tramite lo script `installer.iss` con **Inno Setup**.
+* Crea l'applicazione in `%LOCALAPPDATA%\Programs\PC MIO` con scorciatoia sul Desktop e nel Menu Start.
+
+### Metodo 2: Esecuzione Diretta da Sorgente
+Requisiti: **Python 3.10+** e **Ollama** (opzionale per l'inferenza AI).
+
+```bash
+# 1. Clona il repository
+git clone https://github.com/streetkin/PC-MIO.git
+cd PC-MIO
+
+# 2. Installa le dipendenze
+pip install pywebview
+
+# 3. Avvia la finestra desktop nativa
+python app_desktop.py
+```
+
+Oppure fai doppio clic su:
+👉 **`AVVIA_PC_MIO.bat`**
+
+---
+
+## 🏗️ Architettura del Software
 
 ```
-[ FRONTEND ]   Tauri / Modern UI (Dashboard, Spunte, Report Markdown, Rollback)
+[ FRONTEND ]   Google Material 3 Clean UI (HTML5, TailwindCSS, Inter Font, Toggle iOS-style)
       │
       ▼
-[ BACKEND ]    Core Engine (Rust / Go / Python)
-      ├─► Scanner Win32 / PowerShell (Lettura registri, AppData, ProgramData)
-      ├─► Guardrail Deterministici (Whitelist C:\Windows, VST3, System32)
-      ├─► Modulo Quarantena Reversibile & Rollback (Staging protetto)
+[ BACKEND ]    Python Micro-Core Server (Porta 8765)
+      ├─► Scanner Win32 / Registro HKCU Run (Gestione avvio)
+      ├─► Modulo Quarantena Reversibile & Rollback (C:\PC_MIO_Quarantine)
+      ├─► Guardrail Deterministici (Whitelist DAW, VST3, System32)
       │
       ▼
-[ LOCAL AI ]   Ollama Local API (http://127.0.0.1:11434)
-      ├─► Modelli supportati: Llama 3.2 (3B), Mistral, Qwen 2.5
-      └─► Memory Engine (SQLite: Impronte software imparate e Audit Trail)
+[ MEMORIA ]    SQLite Locale (`pcmio_memory.sqlite`) + Ollama Local API (`127.0.0.1:11434`)
 ```
 
 ---
 
-## 🚀 Prototipo Interattivo della UI
-
-Puoi aprire il file **`index.html`** con qualsiasi browser (Chrome, Edge) per esplorare l'interfaccia completa con:
-- **Dashboard di Sistema** (metriche hardware e software censiti)
-- **Scanner con Caselle di Spunta** (seleziona cosa scansionare)
-- **Generatore Report Markdown** (visualizzatore interattivo)
-- **Centro Azioni & Quarantena** (gestione reversibile dei file con Rollback)
-- **Cervello & Knowledge Base** (le 40 regole e impronte imparate oggi sul campo)
+## 🇮🇹 Orgoglio Italiano
+Sviluppato con passione per offrire agli utenti Windows uno strumento di pulizia e ottimizzazione che rispetti la privacy, i file personali e la semplicità d'uso quotidiana.
