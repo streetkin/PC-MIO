@@ -64,6 +64,19 @@ def init_db():
         report_summary TEXT
     )
     """)
+
+    # Tabella profilo utente e scudo personalizzato
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS user_profile (
+        id INTEGER PRIMARY KEY,
+        profile_name TEXT,
+        categories TEXT,
+        custom_notes TEXT,
+        protected_paths TEXT,
+        is_onboarded INTEGER DEFAULT 0,
+        updated_at TEXT
+    )
+    """)
     
     # Popola con le 40 impronte scoperte oggi se vuoto
     cur.execute("SELECT COUNT(*) FROM learned_footprints")
@@ -117,6 +130,103 @@ def check_ollama():
             "current_model": "Ollama Non Connesso",
             "available_models": []
         }
+
+# 2.1 PROFILO UTENTE E SCUDO DINAMICO
+def get_user_profile():
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("SELECT profile_name, categories, custom_notes, protected_paths, is_onboarded FROM user_profile WHERE id = 1")
+    row = cur.fetchone()
+    conn.close()
+    if row:
+        return {
+            "profile_name": row[0],
+            "categories": json.loads(row[1]) if row[1] else [],
+            "custom_notes": row[2] or "",
+            "protected_paths": json.loads(row[3]) if row[3] else [],
+            "is_onboarded": bool(row[4])
+        }
+    return {
+        "profile_name": "Personalizzato",
+        "categories": ["studio", "office"],
+        "custom_notes": "",
+        "protected_paths": [
+            r"C:\Windows",
+            r"C:\Windows\System32",
+            os.path.join(os.path.expanduser("~"), "Documents")
+        ],
+        "is_onboarded": False
+    }
+
+def deduce_shield_rules(categories, notes=""):
+    user_home = os.path.expanduser("~")
+    base_protected = [
+        {"title": "File di Sistema & Driver Windows", "path": r"C:\Windows • System32", "icon": "⚙️"}
+    ]
+    
+    # Mappatura categorie standard
+    if "study" in categories or "studio" in categories:
+        base_protected.append({
+            "title": "Documenti di Studio, PDF & Tesine",
+            "path": os.path.join(user_home, "Documents") + " • Desktop",
+            "icon": "🎓"
+        })
+    if "gaming" in categories:
+        steam_path = r"C:\Program Files (x86)\Steam"
+        base_protected.append({
+            "title": "Libreria Giochi, Steam & Salvataggi",
+            "path": f"{steam_path} • {os.path.join(user_home, 'Saved Games')}",
+            "icon": "🎮"
+        })
+    if "music" in categories or "audio" in categories:
+        base_protected.append({
+            "title": "Plugin Audio VST3 & Progetti DAW",
+            "path": r"C:\Program Files\Common Files\VST3 • Steinberg",
+            "icon": "🎹"
+        })
+    if "graphics" in categories or "video" in categories:
+        base_protected.append({
+            "title": "Progetti Grafici, Video & Rendering",
+            "path": os.path.join(user_home, "Pictures") + " • Video • Adobe Projects",
+            "icon": "🎨"
+        })
+    if "office" in categories or "work" in categories:
+        base_protected.append({
+            "title": "Documenti di Lavoro, Fogli Excel & Fatture",
+            "path": os.path.join(user_home, "Documents") + " • OneDrive",
+            "icon": "💼"
+        })
+
+    # Deduzione intelligente da note testuali (euristica e semantica)
+    n = notes.lower()
+    if "autocad" in n or "cad" in n or "dwg" in n:
+        base_protected.append({"title": "Progetti Tecnici AutoCAD (.dwg)", "path": "Progetti CAD Utente", "icon": "📐"})
+    if "blender" in n or "3d" in n:
+        base_protected.append({"title": "File e Asset Blender 3D (.blend)", "path": "Asset e Sceneggiature 3D", "icon": "🧊"})
+    if "foto" in n or "ricordi" in n:
+        base_protected.append({"title": "Archivio Fotografico Personale", "path": os.path.join(user_home, "Pictures"), "icon": "📸"})
+    if "codice" in n or "github" in n or "programmazion" in n:
+        base_protected.append({"title": "Repository e Codice Sorgente", "path": "Cartelle Progetti Dev & Git", "icon": "💻"})
+
+    return base_protected
+
+def save_user_profile(profile_name, categories, custom_notes):
+    rules = deduce_shield_rules(categories, custom_notes)
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("""
+    INSERT OR REPLACE INTO user_profile (id, profile_name, categories, custom_notes, protected_paths, is_onboarded, updated_at)
+    VALUES (1, ?, ?, ?, ?, 1, ?)
+    """, (
+        profile_name,
+        json.dumps(categories),
+        custom_notes,
+        json.dumps(rules),
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ))
+    conn.commit()
+    conn.close()
+    return {"success": True, "profile_name": profile_name, "rules": rules}
 
 KNOWN_APPS_INFO = {
     "MicrosoftEdgeAutoLaunch": {
@@ -683,6 +793,8 @@ class PCMioHandler(BaseHTTPRequestHandler):
             skills = [{"name": r[0], "desc": r[1], "date": r[2], "confidence": r[3]} for r in cur.fetchall()]
             conn.close()
             self._send_json(200, {"skills": skills})
+        elif self.path == "/api/profile":
+            self._send_json(200, get_user_profile())
         else:
             self._send_json(404, {"error": "Endpoint non trovato"})
 
@@ -691,7 +803,14 @@ class PCMioHandler(BaseHTTPRequestHandler):
         post_body = self.rfile.read(content_len) if content_len > 0 else b"{}"
         body_json = json.loads(post_body.decode()) if post_body else {}
 
-        if self.path == "/api/scan":
+        if self.path == "/api/profile/save":
+            p_name = body_json.get("profile_name", "Personalizzato")
+            p_cats = body_json.get("categories", [])
+            p_notes = body_json.get("custom_notes", "")
+            res = save_user_profile(p_name, p_cats, p_notes)
+            self._send_json(200, res)
+
+        elif self.path == "/api/scan":
             modules = body_json.get("modules", None)
             result = execute_system_scan(modules=modules)
             # Salva snapshot

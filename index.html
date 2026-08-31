@@ -204,11 +204,11 @@
       </div>
 
       <div onclick="apriModale('modal-guardrails')" class="g-card p-4 flex items-center space-x-3 cursor-pointer hover:border-emerald-300 transition group">
-        <span class="text-2xl group-hover:scale-110 transition-transform">⚡</span>
+        <span class="text-2xl group-hover:scale-110 transition-transform">🛡️</span>
         <div>
-          <div class="text-slate-400 text-[11px]">Protezione Dati & Progetti:</div>
+          <div class="text-slate-400 text-[11px]" id="stat-shield-label">Scudo di Protezione Attivo:</div>
           <div class="text-emerald-700 font-bold text-sm flex items-center space-x-1">
-            <span>198 Plugin DAW al sicuro</span>
+            <span id="stat-shield-val">3 Aree Personali Blindate</span>
             <span class="text-[10px] text-slate-400">➔</span>
           </div>
         </div>
@@ -457,36 +457,17 @@
       </div>
 
       <div class="space-y-2.5 text-xs text-slate-600 leading-relaxed">
-        <p>PC MIO ha una <strong>whitelist immutabile</strong> programmata nel motore interno. Il software non toccherà mai e poi mai questi percorsi protetti:</p>
+        <p>PC MIO ha uno <strong>Scudo Intelligente</strong> programmato su misura per te. Il software non toccherà mai e poi mai questi percorsi e file protetti:</p>
         
-        <div class="space-y-2 pt-1">
-          <div class="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200 flex items-start space-x-2.5">
-            <span class="text-base">🎹</span>
-            <div>
-              <div class="font-bold text-emerald-950">198 Plugin Audio & Cartelle VST3</div>
-              <div class="text-[11px] text-emerald-800 font-mono">C:\Program Files\Common Files\VST3 • Steinberg</div>
-            </div>
-          </div>
-
-          <div class="p-3 bg-blue-50/60 rounded-xl border border-blue-200 flex items-start space-x-2.5">
-            <span class="text-base">📁</span>
-            <div>
-              <div class="font-bold text-blue-950">Progetti e Documenti Personali</div>
-              <div class="text-[11px] text-blue-800 font-mono">C:\Users\admin\Documents • Desktop Utente</div>
-            </div>
-          </div>
-
-          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start space-x-2.5">
-            <span class="text-base">⚙️</span>
-            <div>
-              <div class="font-bold text-slate-900">File di Sistema e Driver Windows</div>
-              <div class="text-[11px] text-slate-600 font-mono">C:\Windows • System32 • Driver Audio</div>
-            </div>
-          </div>
+        <div id="shield-rules-container" class="space-y-2 pt-1 max-h-64 overflow-y-auto pr-1">
+          <!-- Popolato dinamicamente da JavaScript in base al profilo -->
         </div>
       </div>
 
-      <div class="flex justify-end pt-1">
+      <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+        <button onclick="chiudiModale('modal-guardrails'); apriModale('modal-onboarding');" class="btn-secondary text-xs text-slate-600 hover:text-slate-900">
+          ⚙️ Riconfigura Profilo Scudo
+        </button>
         <button onclick="chiudiModale('modal-guardrails')" class="btn-primary text-xs">
           Chiudi
         </button>
@@ -527,17 +508,210 @@
     </div>
   </div>
 
+  <!-- ======================================================== -->
+  <!-- MODALE: ONBOARDING GUIDATO "CREA IL TUO SCUDO"          -->
+  <!-- ======================================================== -->
+  <div id="modal-onboarding" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="g-card max-w-xl w-full p-6 md:p-8 space-y-5 shadow-2xl animate-fade-in flex flex-col max-h-[92vh] overflow-y-auto">
+      
+      <div class="text-center space-y-2">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 via-blue-500 to-indigo-600 text-white flex items-center justify-center text-3xl mx-auto shadow-md">
+          🛡️
+        </div>
+        <h2 class="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">
+          Benvenuto in PC MIO!
+        </h2>
+        <p class="text-xs text-slate-500 max-w-md mx-auto">
+          Prima di qualsiasi operazione, creiamo il tuo <strong>Scudo Protettivo</strong>: dicci chi sei così proteggeremo per sempre ciò a cui tieni di più.
+        </p>
+      </div>
+
+      <!-- Domanda 1: Categorie d'Uso -->
+      <div class="space-y-2">
+        <label class="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
+          <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]">1</span>
+          <span>Come usi principalmente questo computer? (Scegli una o più)</span>
+        </label>
+
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          
+          <label class="p-3 rounded-xl border border-slate-200 hover:border-blue-300 bg-white cursor-pointer flex items-center space-x-2.5 transition">
+            <input type="checkbox" name="onboard-cat" value="study" class="rounded text-blue-600 focus:ring-0">
+            <div>
+              <div class="font-bold text-slate-800">🎓 Studio & Scuola</div>
+              <div class="text-[10px] text-slate-400">PDF, tesine, appunti, Word</div>
+            </div>
+          </label>
+
+          <label class="p-3 rounded-xl border border-slate-200 hover:border-blue-300 bg-white cursor-pointer flex items-center space-x-2.5 transition">
+            <input type="checkbox" name="onboard-cat" value="gaming" class="rounded text-blue-600 focus:ring-0">
+            <div>
+              <div class="font-bold text-slate-800">🎮 Gaming & Giochi</div>
+              <div class="text-[10px] text-slate-400">Steam, Epic, salvataggi, mod</div>
+            </div>
+          </label>
+
+          <label class="p-3 rounded-xl border border-slate-200 hover:border-blue-300 bg-white cursor-pointer flex items-center space-x-2.5 transition">
+            <input type="checkbox" name="onboard-cat" value="music" class="rounded text-blue-600 focus:ring-0">
+            <div>
+              <div class="font-bold text-slate-800">🎹 Musica & Audio</div>
+              <div class="text-[10px] text-slate-400">VST3, DAW, tracce, campioni</div>
+            </div>
+          </label>
+
+          <label class="p-3 rounded-xl border border-slate-200 hover:border-blue-300 bg-white cursor-pointer flex items-center space-x-2.5 transition">
+            <input type="checkbox" name="onboard-cat" value="graphics" class="rounded text-blue-600 focus:ring-0">
+            <div>
+              <div class="font-bold text-slate-800">🎨 Grafica & Video</div>
+              <div class="text-[10px] text-slate-400">Photoshop, Premiere, Blender</div>
+            </div>
+          </label>
+
+          <label class="col-span-2 p-3 rounded-xl border border-slate-200 hover:border-blue-300 bg-white cursor-pointer flex items-center space-x-2.5 transition">
+            <input type="checkbox" name="onboard-cat" value="office" class="rounded text-blue-600 focus:ring-0">
+            <div>
+              <div class="font-bold text-slate-800">💼 Lavoro, Ufficio & Famiglia</div>
+              <div class="text-[10px] text-slate-400">Fogli Excel, fatture, foto dei ricordi, download importanti</div>
+            </div>
+          </label>
+
+        </div>
+      </div>
+
+      <!-- Domanda 2: Descrizione Libera Facoltativa -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
+          <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">2</span>
+          <span>Vuoi dirci qualcosa di specifico sui tuoi file? (Facoltativo)</span>
+        </label>
+        <textarea id="onboard-notes" rows="2" placeholder="Es. 'Studio ingegneria, ho file di AutoCAD sul Desktop' oppure 'Ho una cartella Foto Vacanze in Documenti'..." class="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-400 focus:outline-none transition resize-none"></textarea>
+        <div class="text-[10px] text-slate-400">
+          🧠 <em>Il Cervello AI locale leggerà la tua frase per blindare in automatico le tue cartelle senza toccarle mai.</em>
+        </div>
+      </div>
+
+      <!-- Azioni di Salvataggio -->
+      <div class="pt-2 flex items-center justify-between border-t border-slate-100">
+        <button type="button" onclick="chiudiModale('modal-onboarding')" class="btn-secondary text-xs">
+          Salta per ora
+        </button>
+        <button type="button" onclick="salvaProfiloOnboarding()" id="btn-save-onboard" class="btn-primary text-xs px-6">
+          Attiva il Mio Scudo ➔
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- JAVASCRIPT GOOGLE STYLE ENGINE -->
   <script>
     const API_BASE = "http://127.0.0.1:8765";
     let CURRENT_FINDINGS = [];
     let STARTUP_APPS = [];
 
+    let CURRENT_PROFILE = null;
+
     document.addEventListener("DOMContentLoaded", () => {
       aggiornaDatiSistema();
       caricaStatoQuarantena();
+      caricaProfiloUtente();
       setTimeout(avviaScansioneSilenziosa, 400);
     });
+
+    async function caricaProfiloUtente() {
+      try {
+        const res = await fetch(`${API_BASE}/api/profile`);
+        if (res.ok) {
+          CURRENT_PROFILE = await res.json();
+          renderizzaRegoleScudo(CURRENT_PROFILE);
+          // Se l'utente non ha mai completato l'onboarding, mostralo dopo 600ms
+          if (!CURRENT_PROFILE.is_onboarded) {
+            setTimeout(() => apriModale('modal-onboarding'), 600);
+          }
+        }
+      } catch (e) {
+        console.warn("Errore caricamento profilo:", e);
+      }
+    }
+
+    function renderizzaRegoleScudo(prof) {
+      if (!prof) return;
+      const val = document.getElementById('stat-shield-val');
+      const label = document.getElementById('stat-shield-label');
+      const container = document.getElementById('shield-rules-container');
+      
+      const rules = prof.protected_paths || [];
+      if (val) val.innerText = `${rules.length} Aree Blindate (${prof.profile_name || 'Personalizzato'})`;
+      if (label) label.innerText = `Scudo [${prof.profile_name || 'Attivo'}]:`;
+
+      if (container) {
+        container.innerHTML = "";
+        rules.forEach(r => {
+          const row = document.createElement('div');
+          row.className = "p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start space-x-2.5";
+          row.innerHTML = `
+            <span class="text-base">${r.icon || '🛡️'}</span>
+            <div>
+              <div class="font-bold text-slate-900">${r.title}</div>
+              <div class="text-[11px] text-slate-600 font-mono">${r.path}</div>
+            </div>
+          `;
+          container.appendChild(row);
+        });
+      }
+    }
+
+    async function salvaProfiloOnboarding() {
+      const btn = document.getElementById('btn-save-onboard');
+      const checkboxes = document.querySelectorAll('input[name="onboard-cat"]:checked');
+      const cats = Array.from(checkboxes).map(c => c.value);
+      const notes = document.getElementById('onboard-notes').value.trim();
+
+      if (cats.length === 0 && !notes) {
+        alert("Seleziona almeno una categoria o scrivi una breve descrizione dei tuoi file.");
+        return;
+      }
+
+      btn.innerText = "Creazione Scudo in corso...";
+      btn.classList.add('opacity-50', 'pointer-events-none');
+
+      // Calcola nome profilo
+      let name = "Utente";
+      if (cats.includes('study')) name = "Studio";
+      else if (cats.includes('gaming')) name = "Gaming";
+      else if (cats.includes('music')) name = "Musica";
+      else if (cats.includes('graphics')) name = "Creator";
+      else if (cats.includes('office')) name = "Lavoro";
+
+      try {
+        const res = await fetch(`${API_BASE}/api/profile/save`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            profile_name: name,
+            categories: cats,
+            custom_notes: notes
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          CURRENT_PROFILE = data;
+          renderizzaRegoleScudo({
+            profile_name: name,
+            protected_paths: data.rules
+          });
+          chiudiModale('modal-onboarding');
+          alert(`Scudo attivato per il profilo [${name}]! I tuoi file sono ora completamente al sicuro.`);
+          avviaScansione();
+        }
+      } catch (e) {
+        alert("Errore durante il salvataggio dello scudo: " + e.message);
+      } finally {
+        btn.innerText = "Attiva il Mio Scudo ➔";
+        btn.classList.remove('opacity-50', 'pointer-events-none');
+      }
+    }
 
     function apriModale(id) {
       document.getElementById(id).classList.remove('hidden');
