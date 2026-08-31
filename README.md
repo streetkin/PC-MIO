@@ -29,7 +29,35 @@
 
 ---
 
-## 💻 Come Avviare o Installare
+## 🧠 Prerequisito Consigliato: Installazione di Ollama (AI Locale)
+
+Per permettere a **PC MIO** di sfruttare al 100% l'intelligenza artificiale per spiegare le anomalie e apprendere i pattern senza inviare alcun dato all'esterno, consigliamo di installare **Ollama**:
+
+### 1. Scarica Ollama per Windows
+Vai sul sito ufficiale [ollama.com/download/windows](https://ollama.com/download/windows) e scarica il file `OllamaSetup.exe`.
+
+### 2. Esegui l'Installazione
+Fai doppio clic sull'eseguibile scaricato per completare l'installazione in pochi secondi. Ollama si posizionerà automaticamente nell'area di notifica (tray bar) di Windows.
+
+### 3. Scarica il Modello Consigliato
+Apri **PowerShell** o il **Prompt dei comandi** di Windows e incolla questo comando:
+```bash
+ollama run qwen2.5-coder:1.5b
+```
+*(Il download richiederà solo circa 900 MB. È leggero, ultra-veloce e consuma pochissima RAM)*.
+
+Se preferisci un modello linguistico alternativo:
+```bash
+ollama run llama3.2
+```
+
+### 4. Verifica
+Ollama risponderà direttamente nel terminale. Puoi chiudere la finestra: il servizio rimarrà attivo in background su `http://127.0.0.1:11434`.  
+All'avvio, **PC MIO** si connetterà in automatico mostrando il bollino verde **"AI Locale: Attiva"**!
+
+---
+
+## 💻 Come Avviare o Installare PC MIO
 
 ### Metodo 1: Installer Ufficiale Windows
 Puoi compilare o eseguire l'installer dedicato:
@@ -37,7 +65,7 @@ Puoi compilare o eseguire l'installer dedicato:
 * Crea l'applicazione in `%LOCALAPPDATA%\Programs\PC MIO` con scorciatoia sul Desktop e nel Menu Start.
 
 ### Metodo 2: Esecuzione Diretta da Sorgente
-Requisiti: **Python 3.10+** e **Ollama** (opzionale per l'inferenza AI).
+Requisiti: **Python 3.10+**
 
 ```bash
 # 1. Clona il repository
@@ -51,7 +79,7 @@ pip install pywebview
 python app_desktop.py
 ```
 
-Oppure fai doppio clic su:
+Oppure fai doppio clic sul Desktop su:  
 👉 **`AVVIA_PC_MIO.bat`**
 
 ---
