@@ -118,8 +118,8 @@
 
     <!-- Stato del Sistema & Cassaforte Quarantena -->
     <div class="flex items-center space-x-3">
-      <div class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs text-slate-600 font-medium">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+      <div onclick="apriGuidaOllama()" title="Clicca per la guida all'installazione di Ollama" class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs text-slate-600 font-medium cursor-pointer transition shadow-2xs">
+        <span id="header-ollama-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
         <span id="header-ollama-label">Cervello AI: Ollama locale attivo</span>
       </div>
 
@@ -357,6 +357,77 @@
     </div>
   </div>
 
+  <!-- ======================================================== -->
+  <!-- MODALE: GUIDA INSTALLAZIONE OLLAMA (AI LOCALE)          -->
+  <!-- ======================================================== -->
+  <div id="modal-ollama" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="g-card max-w-lg w-full p-6 space-y-4 shadow-2xl">
+      
+      <div class="flex items-start justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
+            🧠
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Configurazione Ollama (AI Locale)</h3>
+            <p class="text-xs text-slate-500">Come attivare il Cervello intelligente 100% privato sul tuo PC.</p>
+          </div>
+        </div>
+        <button onclick="chiudiModale('modal-ollama')" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-sm font-bold transition">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-600 leading-relaxed">
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+          <div class="font-bold text-slate-800 flex items-center space-x-1.5">
+            <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">1</span>
+            <span>Scarica e installa Ollama per Windows</span>
+          </div>
+          <p class="text-[11px] text-slate-500 pl-6.5">
+            Scarica l'installer ufficiale gratuito per Windows da <strong>ollama.com</strong> ed eseguilo.
+          </p>
+          <div class="pl-6.5 pt-1">
+            <a href="https://ollama.com/download/windows" target="_blank" class="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-xs shadow-xs">
+              <span>Scarica Ollama per Windows</span>
+              <span>↗</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+          <div class="font-bold text-slate-800 flex items-center space-x-1.5">
+            <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">2</span>
+            <span>Scarica il Modello Consigliato</span>
+          </div>
+          <p class="text-[11px] text-slate-500 pl-6.5">
+            Apri PowerShell o il Prompt dei comandi e incolla questo comando:
+          </p>
+          <div class="pl-6.5 pt-1">
+            <div class="p-2 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-lg select-all">
+              ollama run qwen2.5-coder:1.5b
+            </div>
+          </div>
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+          <div class="font-bold text-slate-800 flex items-center space-x-1.5">
+            <span class="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px] font-bold">3</span>
+            <span>Riconoscimento Automatico</span>
+          </div>
+          <p class="text-[11px] text-slate-500 pl-6.5">
+            Fatto! Una volta attivo su Windows, PC MIO si collegherà automaticamente in locale.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-1">
+        <button onclick="chiudiModale('modal-ollama')" class="btn-primary text-xs">
+          Ho Capito, Chiudi
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- JAVASCRIPT GOOGLE STYLE ENGINE -->
   <script>
     const API_BASE = "http://127.0.0.1:8765";
@@ -369,14 +440,24 @@
       setTimeout(avviaScansioneSilenziosa, 400);
     });
 
+    function apriGuidaOllama() {
+      document.getElementById('modal-ollama').classList.remove('hidden');
+    }
+
     async function aggiornaDatiSistema() {
       try {
         const res = await fetch(`${API_BASE}/api/status`);
         if (res.ok) {
           const data = await res.json();
           document.getElementById('stat-disk-free').innerText = `${data.disk_free_gb} GB liberi (${data.disk_total_gb} GB tot)`;
+          const lbl = document.getElementById('header-ollama-label');
+          const dot = document.getElementById('header-ollama-dot');
           if (data.ollama && data.ollama.online) {
-            document.getElementById('header-ollama-label').innerText = `AI Locale: ${data.ollama.current_model}`;
+            lbl.innerText = `Cervello AI: ${data.ollama.current_model}`;
+            dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+          } else {
+            lbl.innerText = "Cervello AI: Offline (clicca per guida)";
+            dot.className = "w-2 h-2 rounded-full bg-amber-500";
           }
         }
       } catch (e) {
