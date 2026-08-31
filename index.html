@@ -203,19 +203,25 @@
         </div>
       </div>
 
-      <div class="g-card p-4 flex items-center space-x-3">
-        <span class="text-2xl">⚡</span>
+      <div onclick="apriModale('modal-guardrails')" class="g-card p-4 flex items-center space-x-3 cursor-pointer hover:border-emerald-300 transition group">
+        <span class="text-2xl group-hover:scale-110 transition-transform">⚡</span>
         <div>
           <div class="text-slate-400 text-[11px]">Protezione Dati & Progetti:</div>
-          <div class="text-emerald-700 font-bold text-sm">198 Plugin DAW al sicuro</div>
+          <div class="text-emerald-700 font-bold text-sm flex items-center space-x-1">
+            <span>198 Plugin DAW al sicuro</span>
+            <span class="text-[10px] text-slate-400">➔</span>
+          </div>
         </div>
       </div>
 
-      <div class="g-card p-4 flex items-center space-x-3">
-        <span class="text-2xl">🧠</span>
+      <div onclick="apriMemoriaLocale()" class="g-card p-4 flex items-center space-x-3 cursor-pointer hover:border-purple-300 transition group">
+        <span class="text-2xl group-hover:scale-110 transition-transform">🧠</span>
         <div>
           <div class="text-slate-400 text-[11px]">Memoria Locale Appresa:</div>
-          <div id="stat-skills-count" class="text-slate-900 font-bold text-sm">5 Pattern memorizzati</div>
+          <div id="stat-skills-count" class="text-slate-900 font-bold text-sm flex items-center space-x-1">
+            <span>5 Pattern memorizzati</span>
+            <span class="text-[10px] text-slate-400">➔</span>
+          </div>
         </div>
       </div>
     </div>
@@ -428,6 +434,96 @@
     </div>
   </div>
 
+  <!-- ======================================================== -->
+  <!-- MODALE: GUARDRAIL DI PROTEZIONE SISTEMA & AUDIO         -->
+  <!-- ======================================================== -->
+  <div id="modal-guardrails" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="g-card max-w-lg w-full p-6 space-y-4 shadow-2xl">
+      
+      <div class="flex items-start justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+            🛡️
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Protezione Totale del Tuo Sistema</h3>
+            <p class="text-xs text-slate-500">I tuoi file di lavoro e di sistema sono blindati al 100%.</p>
+          </div>
+        </div>
+        <button onclick="chiudiModale('modal-guardrails')" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-sm font-bold transition">✕</button>
+      </div>
+
+      <div class="space-y-2.5 text-xs text-slate-600 leading-relaxed">
+        <p>PC MIO ha una <strong>whitelist immutabile</strong> programmata nel motore interno. Il software non toccherà mai e poi mai questi percorsi protetti:</p>
+        
+        <div class="space-y-2 pt-1">
+          <div class="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200 flex items-start space-x-2.5">
+            <span class="text-base">🎹</span>
+            <div>
+              <div class="font-bold text-emerald-950">198 Plugin Audio & Cartelle VST3</div>
+              <div class="text-[11px] text-emerald-800 font-mono">C:\Program Files\Common Files\VST3 • Steinberg</div>
+            </div>
+          </div>
+
+          <div class="p-3 bg-blue-50/60 rounded-xl border border-blue-200 flex items-start space-x-2.5">
+            <span class="text-base">📁</span>
+            <div>
+              <div class="font-bold text-blue-950">Progetti e Documenti Personali</div>
+              <div class="text-[11px] text-blue-800 font-mono">C:\Users\admin\Documents • Desktop Utente</div>
+            </div>
+          </div>
+
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start space-x-2.5">
+            <span class="text-base">⚙️</span>
+            <div>
+              <div class="font-bold text-slate-900">File di Sistema e Driver Windows</div>
+              <div class="text-[11px] text-slate-600 font-mono">C:\Windows • System32 • Driver Audio</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-1">
+        <button onclick="chiudiModale('modal-guardrails')" class="btn-primary text-xs">
+          Chiudi
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODALE: MEMORIA DEL CERVELLO LOCALE (SQLITE)             -->
+  <!-- ======================================================== -->
+  <div id="modal-memory" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="g-card max-w-lg w-full p-6 space-y-4 shadow-2xl">
+      
+      <div class="flex items-start justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
+            🧠
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Memoria Appresa dal Cervello AI</h3>
+            <p class="text-xs text-slate-500">Regole memorizzate nel tuo database SQLite locale.</p>
+          </div>
+        </div>
+        <button onclick="chiudiModale('modal-memory')" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-sm font-bold transition">✕</button>
+      </div>
+
+      <div id="memory-skills-list" class="divide-y divide-slate-100 max-h-72 overflow-y-auto text-xs">
+        <div class="p-4 text-center text-slate-400">Caricamento regole apprese in corso...</div>
+      </div>
+
+      <div class="flex justify-end pt-1">
+        <button onclick="chiudiModale('modal-memory')" class="btn-primary text-xs">
+          Chiudi
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- JAVASCRIPT GOOGLE STYLE ENGINE -->
   <script>
     const API_BASE = "http://127.0.0.1:8765";
@@ -440,8 +536,45 @@
       setTimeout(avviaScansioneSilenziosa, 400);
     });
 
+    function apriModale(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+
     function apriGuidaOllama() {
-      document.getElementById('modal-ollama').classList.remove('hidden');
+      apriModale('modal-ollama');
+    }
+
+    async function apriMemoriaLocale() {
+      apriModale('modal-memory');
+      const list = document.getElementById('memory-skills-list');
+      try {
+        const res = await fetch(`${API_BASE}/api/memory`);
+        if (res.ok) {
+          const data = await res.json();
+          list.innerHTML = "";
+          if (!data.skills || data.skills.length === 0) {
+            list.innerHTML = "<div class='p-4 text-center text-slate-400'>Nessuna regola salvata finora. L'IA memorizzerà le impronte delle tue prossime pulizie!</div>";
+            return;
+          }
+          data.skills.forEach(s => {
+            const row = document.createElement('div');
+            row.className = "py-3 flex items-start justify-between space-x-3";
+            row.innerHTML = `
+              <div class="space-y-0.5 pr-2">
+                <div class="font-bold text-slate-800 text-xs">${s.name}</div>
+                <div class="text-[11px] text-slate-500">${s.desc}</div>
+                <div class="text-[10px] text-slate-400">${s.date ? 'Impronta appresa il: ' + s.date : ''}</div>
+              </div>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold shrink-0">
+                100% Convalidato
+              </span>
+            `;
+            list.appendChild(row);
+          });
+        }
+      } catch (e) {
+        list.innerHTML = "<div class='p-4 text-center text-red-500'>Errore di connessione al database locale.</div>";
+      }
     }
 
     async function aggiornaDatiSistema() {
@@ -462,6 +595,17 @@
         }
       } catch (e) {
         console.warn("Backend non raggiungibile:", e);
+      }
+
+      try {
+        const resMem = await fetch(`${API_BASE}/api/memory`);
+        if (resMem.ok) {
+          const mem = await resMem.json();
+          const count = mem.skills ? mem.skills.length : 0;
+          document.getElementById('stat-skills-count').innerHTML = `<span>${count} Pattern memorizzati</span><span class="text-[10px] text-slate-400">➔</span>`;
+        }
+      } catch (e) {
+        console.warn("Errore memory fetch:", e);
       }
     }
 
