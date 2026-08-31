@@ -611,6 +611,38 @@
     </div>
   </div>
 
+  <!-- ======================================================== -->
+  <!-- MODALE: CONFERMA ATTIVAZIONE SCUDO (GOOGLE STYLE)        -->
+  <!-- ======================================================== -->
+  <div id="modal-shield-success" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="g-card max-w-md w-full p-6 text-center space-y-4 shadow-2xl animate-fade-in border border-emerald-100">
+      
+      <div class="w-16 h-16 rounded-3xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center text-3xl mx-auto shadow-xs">
+        🛡️
+      </div>
+
+      <div class="space-y-1">
+        <h3 class="text-base font-extrabold text-slate-900" id="success-shield-title">
+          Scudo Attivato con Successo!
+        </h3>
+        <p class="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed" id="success-shield-desc">
+          Il tuo computer è ora protetto e i tuoi file essenziali sono blindati.
+        </p>
+      </div>
+
+      <div class="p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-600 text-left space-y-1.5" id="success-shield-summary">
+        <!-- Lista rapida delle protezioni create -->
+      </div>
+
+      <div class="pt-1">
+        <button onclick="chiudiModale('modal-shield-success'); avviaScansione();" class="btn-primary w-full text-xs py-2.5 shadow-emerald-600/20 bg-emerald-600 hover:bg-emerald-700">
+          Perfetto, Analizza il Mio PC ➔
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- JAVASCRIPT GOOGLE STYLE ENGINE -->
   <script>
     const API_BASE = "http://127.0.0.1:8765";
@@ -711,8 +743,26 @@
             protected_paths: data.rules
           });
           chiudiModale('modal-onboarding');
-          alert(`Scudo attivato per il profilo [${name}]! I tuoi file sono ora completamente al sicuro.`);
-          avviaScansione();
+
+          // Popola la modale elegante di successo
+          document.getElementById('success-shield-title').innerText = `Scudo Attivato per [${name}]!`;
+          document.getElementById('success-shield-desc').innerText = `PC MIO ha configurato ${data.rules.length} regole di protezione inviolabili.`;
+          const sumBox = document.getElementById('success-shield-summary');
+          sumBox.innerHTML = "";
+          data.rules.slice(0, 4).forEach(r => {
+            const item = document.createElement('div');
+            item.className = "flex items-center space-x-2";
+            item.innerHTML = `<span>${r.icon || '🛡️'}</span><span class="font-bold text-slate-800">${r.title}</span>`;
+            sumBox.appendChild(item);
+          });
+          if (data.rules.length > 4) {
+            const more = document.createElement('div');
+            more.className = "text-[10px] text-slate-400 pl-5";
+            more.innerText = `+ altre ${data.rules.length - 4} cartelle e percorsi protetti...`;
+            sumBox.appendChild(more);
+          }
+
+          apriModale('modal-shield-success');
         }
       } catch (e) {
         alert("Errore durante il salvataggio dello scudo: " + e.message);
