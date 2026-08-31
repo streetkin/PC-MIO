@@ -118,7 +118,73 @@ def check_ollama():
             "available_models": []
         }
 
-# 3. MOTORE DI SCANSIONE REALE IN SOLA LETTURA
+KNOWN_APPS_INFO = {
+    "MicrosoftEdgeAutoLaunch": {
+        "clean_name": "Microsoft Edge (Pre-avvio)",
+        "description": "Pre-carica il browser Edge in memoria all'accensione di Windows.",
+        "impact": "Medio",
+        "safe_to_disable": True,
+        "advice": "Inutile se usi Chrome o altri browser. Puoi rimuoverlo o disattivarlo per velocizzare il boot.",
+        "icon": "🌐"
+    },
+    "OneDrive": {
+        "clean_name": "Microsoft OneDrive",
+        "description": "Sincronizza in background i file con il cloud di Microsoft.",
+        "impact": "Alto",
+        "safe_to_disable": True,
+        "advice": "Tienilo attivo solo se usi il backup cloud OneDrive.",
+        "icon": "☁️"
+    },
+    "Discord": {
+        "clean_name": "Discord",
+        "description": "Chat e comunicazioni vocali. Avviandosi subito consuma memoria RAM.",
+        "impact": "Alto",
+        "safe_to_disable": True,
+        "advice": "Consigliato disattivarlo e aprirlo solo quando vuoi chattare.",
+        "icon": "💬"
+    },
+    "Canva": {
+        "clean_name": "Canva (Controllo Aggiornamenti)",
+        "description": "Processo in background che controlla se ci sono aggiornamenti di Canva.",
+        "impact": "Basso",
+        "safe_to_disable": True,
+        "advice": "Non serve all'avvio del computer. Puoi disattivarlo o rimuoverlo in sicurezza.",
+        "icon": "🎨"
+    },
+    "Norton": {
+        "clean_name": "Norton Security UI",
+        "description": "Interfaccia utente dell'antivirus Norton installato sul sistema.",
+        "impact": "Medio",
+        "safe_to_disable": False,
+        "advice": "Componente di protezione antivirus. Consigliato mantenerlo attivo.",
+        "icon": "🛡️"
+    }
+}
+
+def enrich_app_info(name, command, enabled):
+    info = {
+        "id": name,
+        "name": name,
+        "display_name": name,
+        "command": command,
+        "enabled": enabled,
+        "impact": "Medio",
+        "description": "Processo impostato per l'esecuzione automatica ad ogni accensione.",
+        "advice": "Puoi disattivarlo se non ti serve subito all'avvio.",
+        "safe_to_disable": True,
+        "icon": "⚡"
+    }
+    for key, data in KNOWN_APPS_INFO.items():
+        if key.lower() in name.lower() or key.lower() in command.lower():
+            info["display_name"] = data["clean_name"]
+            info["description"] = data["description"]
+            info["impact"] = data["impact"]
+            info["advice"] = data["advice"]
+            info["safe_to_disable"] = data["safe_to_disable"]
+            info["icon"] = data["icon"]
+            break
+    return info
+
 def list_startup_apps():
     items = []
     # Enabled in Run
@@ -126,7 +192,7 @@ def list_startup_apps():
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run")
         for i in range(winreg.QueryInfoKey(key)[1]):
             name, val, _ = winreg.EnumValue(key, i)
-            items.append({"name": name, "command": val, "enabled": True})
+            items.append(enrich_app_info(name, val, True))
         winreg.CloseKey(key)
     except Exception:
         pass
@@ -135,7 +201,7 @@ def list_startup_apps():
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run_PCMio_Disabled")
         for i in range(winreg.QueryInfoKey(key)[1]):
             name, val, _ = winreg.EnumValue(key, i)
-            items.append({"name": name, "command": val, "enabled": False})
+            items.append(enrich_app_info(name, val, False))
         winreg.CloseKey(key)
     except Exception:
         pass
@@ -171,6 +237,19 @@ def toggle_startup_app(app_name, enable):
             return True
         except Exception:
             return False
+
+def delete_startup_app(app_name):
+    # Rimuove la chiave sia da Run che da Run_PCMio_Disabled
+    removed = False
+    for path in [r"Software\Microsoft\Windows\CurrentVersion\Run", r"Software\Microsoft\Windows\CurrentVersion\Run_PCMio_Disabled"]:
+        try:
+            k = winreg.OpenKey(winreg.HKEY_CURRENT_USER, path, 0, winreg.KEY_ALL_ACCESS)
+            winreg.DeleteValue(k, app_name)
+            winreg.CloseKey(k)
+            removed = True
+        except Exception:
+            pass
+    return removed
 
 def execute_system_scan(modules=None):
     if not modules:
@@ -630,6 +709,11 @@ class PCMioHandler(BaseHTTPRequestHandler):
             app_name = body_json.get("name", "")
             enable = body_json.get("enable", False)
             success = toggle_startup_app(app_name, enable)
+            self._send_json(200, {"success": success, "apps": list_startup_apps()})
+
+        elif self.path == "/api/startup/delete":
+            app_name = body_json.get("name", "")
+            success = delete_startup_app(app_name)
             self._send_json(200, {"success": success, "apps": list_startup_apps()})
 
         elif self.path == "/api/quarantine":

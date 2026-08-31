@@ -229,32 +229,35 @@
   </main>
 
   <!-- ======================================================== -->
-  <!-- MODALE: GESTIONE AVVIO WINDOWS (INTERRUTTORI ON/OFF)     -->
+  <!-- MODALE: GESTIONE AVVIO WINDOWS (INTELLIGENZA E RIMOZIONE)-->
   <!-- ======================================================== -->
   <div id="modal-startup" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden flex items-center justify-center p-4">
-    <div class="g-card max-w-lg w-full p-6 space-y-5 shadow-2xl">
+    <div class="g-card max-w-2xl w-full p-6 md:p-7 space-y-4 shadow-2xl flex flex-col max-h-[90vh]">
       
-      <div class="flex items-start justify-between">
+      <div class="flex items-start justify-between border-b border-slate-100 pb-3.5">
         <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+          <div class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl shadow-xs">
             ⚡
           </div>
           <div>
-            <h3 class="text-base font-bold text-slate-900">App all'Avvio di Windows</h3>
-            <p class="text-xs text-slate-500">Spegni quelle che non ti servono per accendere il PC in pochi secondi.</p>
+            <h3 class="text-lg font-extrabold text-slate-900">Programmi all'Avvio di Windows</h3>
+            <p class="text-xs text-slate-500">Scopri cosa fa ogni programma, quanto rallenta il PC e decidi se spegnerlo o rimuoverlo.</p>
           </div>
         </div>
         <button onclick="chiudiModale('modal-startup')" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-sm font-bold transition">✕</button>
       </div>
 
-      <!-- Elenco delle App con Toggle ON/OFF -->
-      <div id="startup-apps-list" class="divide-y divide-slate-100 max-h-72 overflow-y-auto">
+      <!-- Elenco delle App Intelligenti -->
+      <div id="startup-apps-list" class="overflow-y-auto space-y-3 pr-1 flex-1 py-1">
         <!-- Generato dinamicamente -->
       </div>
 
-      <div class="flex justify-end pt-2">
-        <button onclick="chiudiModale('modal-startup')" class="btn-primary text-xs">
-          Ho Fatto, Chiudi
+      <div class="flex items-center justify-between border-t border-slate-100 pt-3">
+        <div class="text-[11px] text-slate-400">
+          💡 <em>I programmi disattivati non partono da soli, ma potrai sempre riaccenderli qui o aprirli normalmente quando ti servono.</em>
+        </div>
+        <button onclick="chiudiModale('modal-startup')" class="btn-primary text-xs shrink-0">
+          Ho Fatto, Salva
         </button>
       </div>
 
@@ -794,19 +797,59 @@
       }
 
       apps.forEach(app => {
-        const row = document.createElement('div');
-        row.className = "py-3 flex items-center justify-between";
-        row.innerHTML = `
-          <div class="space-y-0.5 pr-4">
-            <div class="font-bold text-slate-800 text-xs">${app.name}</div>
-            <div class="text-[11px] text-slate-400 truncate max-w-xs">${app.command}</div>
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-2xl border transition-all ${app.enabled ? 'bg-white border-slate-200 shadow-2xs' : 'bg-slate-50 border-slate-200/60 opacity-75'}`;
+        
+        let impactBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Impatto: ${app.impact}</span>`;
+        if (app.impact === 'Alto') {
+          impactBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">Impatto: Alto (Rallenta)</span>`;
+        } else if (app.impact === 'Basso') {
+          impactBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Impatto: Basso</span>`;
+        }
+
+        const icon = app.icon || '⚡';
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-start space-x-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center text-lg shrink-0 mt-0.5">
+                ${icon}
+              </div>
+              <div class="space-y-1 min-w-0">
+                <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                  <span class="font-bold text-slate-900 text-xs sm:text-sm">${app.display_name}</span>
+                  ${impactBadge}
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed">${app.description}</p>
+                <div class="text-[11px] text-blue-700 font-medium bg-blue-50/70 border border-blue-100 rounded-lg px-2.5 py-1 inline-block">
+                  💡 <strong>Consiglio:</strong> ${app.advice}
+                </div>
+                <div class="text-[10px] text-slate-400 font-mono truncate max-w-md pt-0.5" title="${app.command}">
+                  ${app.command}
+                </div>
+              </div>
+            </div>
+
+            <!-- Controlli: Switch ON/OFF e Cestino Rimuovi -->
+            <div class="flex flex-col items-end space-y-3 shrink-0 pt-0.5">
+              <div class="flex items-center space-x-2">
+                <span class="text-[11px] font-semibold ${app.enabled ? 'text-emerald-700' : 'text-slate-400'}">
+                  ${app.enabled ? 'Attivo' : 'Spento'}
+                </span>
+                <label class="g-switch">
+                  <input type="checkbox" ${app.enabled ? 'checked' : ''} onchange="toggleAppAvvio('${app.name}', this.checked)">
+                  <span class="g-slider"></span>
+                </label>
+              </div>
+
+              <button onclick="rimuoviAppAvvio('${app.name}')" title="Rimuovi definitivamente dalla lista di avvio" class="text-[11px] text-slate-400 hover:text-red-600 transition flex items-center space-x-1 px-2 py-1 rounded-md hover:bg-red-50 border border-transparent hover:border-red-200">
+                <span>🗑️</span>
+                <span>Rimuovi</span>
+              </button>
+            </div>
           </div>
-          <label class="g-switch shrink-0">
-            <input type="checkbox" ${app.enabled ? 'checked' : ''} onchange="toggleAppAvvio('${app.name}', this.checked)">
-            <span class="g-slider"></span>
-          </label>
         `;
-        container.appendChild(row);
+        container.appendChild(card);
       });
     }
 
@@ -824,6 +867,24 @@
         }
       } catch (e) {
         alert("Errore durante la modifica dell'applicazione.");
+      }
+    }
+
+    async function rimuoviAppAvvio(appName) {
+      if (!confirm(`Sei sicuro di voler rimuovere definitivamente '${appName}' dall'avvio automatico di Windows? Non partirà mai più da solo all'accensione.`)) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/startup/delete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: appName })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          renderizzaAppAvvio(data.apps || []);
+          avviaScansioneSilenziosa();
+        }
+      } catch (e) {
+        alert("Errore durante la rimozione dell'applicazione.");
       }
     }
 
