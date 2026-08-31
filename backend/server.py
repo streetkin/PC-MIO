@@ -8,12 +8,17 @@ import winreg
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from datetime import datetime
 import threading
+import logging
+from logging.handlers import RotatingFileHandler
+import secrets
+
+SESSION_TOKEN = secrets.token_hex(16)
 
 try:
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     sys.stderr.reconfigure(encoding='utf-8', errors='replace')
-except Exception:
-    pass
+except Exception as e:
+    pass  # Print isn't reliable here yet
 
 PORT = 8765
 OLLAMA_URL = "http://127.0.0.1:11434"
@@ -22,6 +27,24 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(BASE_DIR)
 DB_PATH = os.path.join(PROJECT_DIR, "pcmio_memory.sqlite")
 QUARANTINE_DIR = os.path.join("C:\\", "PC_MIO_Quarantine")
+
+LOG_DIR = os.path.join(PROJECT_DIR, 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+
+logger = logging.getLogger('pcmio')
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+fh = RotatingFileHandler(os.path.join(LOG_DIR, 'pcmio.log'), maxBytes=5*1024*1024, backupCount=3)
+fh.setLevel(logging.DEBUG)
+fh.setFormatter(formatter)
+
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+ch.setFormatter(formatter)
+
+logger.addHandler(fh)
+logger.addHandler(ch)
 
 # 1. INIZIALIZZAZIONE DATABASE MEMORIA (SQLITE)
 def init_db():
@@ -124,7 +147,8 @@ def check_ollama():
                 "current_model": MODEL_NAME if any(MODEL_NAME in m for m in models) else (models[0] if models else "N/A"),
                 "available_models": models
             }
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Errore connessione Ollama: {e}")
         return {
             "online": False,
             "current_model": "Ollama Non Connesso",
@@ -161,7 +185,7 @@ def get_user_profile():
 def deduce_shield_rules(categories, notes=""):
     user_home = os.path.expanduser("~")
     base_protected = [
-        {"title": "File di Sistema & Driver Windows", "path": r"C:\Windows • System32", "icon": "⚙️"}
+        {"title": "File di Sistema & Driver Windows", "path": r"C:\Windows • System32", "real_paths": [r"C:\Windows", r"C:\Windows\System32", r"C:\Program Files", r"C:\Program Files (x86)", os.path.join(user_home, "Documents")], "icon": "⚙️"}
     ]
     
     # Mappatura categorie standard
@@ -169,6 +193,7 @@ def deduce_shield_rules(categories, notes=""):
         base_protected.append({
             "title": "Documenti di Studio, PDF & Tesine",
             "path": os.path.join(user_home, "Documents") + " • Desktop",
+            "real_paths": [os.path.join(user_home, "Documents"), os.path.join(user_home, "Desktop")],
             "icon": "🎓"
         })
     if "gaming" in categories:
@@ -176,43 +201,48 @@ def deduce_shield_rules(categories, notes=""):
         base_protected.append({
             "title": "Libreria Giochi, Steam & Salvataggi",
             "path": f"{steam_path} • {os.path.join(user_home, 'Saved Games')}",
+            "real_paths": [steam_path, os.path.join(user_home, "Saved Games")],
             "icon": "🎮"
         })
     if "music" in categories or "audio" in categories:
         base_protected.append({
             "title": "Plugin Audio VST3 & Progetti DAW",
             "path": r"C:\Program Files\Common Files\VST3 • Steinberg",
+            "real_paths": [r"C:\Program Files\Common Files\VST3", os.path.join(user_home, "Documents", "Steinberg")],
             "icon": "🎹"
         })
     if "graphics" in categories or "video" in categories:
         base_protected.append({
             "title": "Progetti Grafici, Video & Rendering",
             "path": os.path.join(user_home, "Pictures") + " • Video • Adobe Projects",
+            "real_paths": [os.path.join(user_home, "Pictures"), os.path.join(user_home, "Videos"), os.path.join(user_home, "Documents", "Adobe")],
             "icon": "🎨"
         })
     if "office" in categories or "work" in categories:
         base_protected.append({
             "title": "Documenti di Lavoro, Fogli Excel & Fatture",
             "path": os.path.join(user_home, "Documents") + " • OneDrive",
+            "real_paths": [os.path.join(user_home, "Documents"), os.path.join(user_home, "OneDrive")],
             "icon": "💼"
         })
     if "dev" in categories or "coding" in categories or "ai" in categories:
         base_protected.append({
             "title": "Sviluppo Software, Codice & Modelli AI",
             "path": r"Git Repo • VS Code • .ollama\models • Python venv",
+            "real_paths": [os.path.join(user_home, "source", "repos"), os.path.join(user_home, ".vscode"), os.path.join(user_home, ".ollama", "models")],
             "icon": "💻"
         })
 
     # Deduzione intelligente da note testuali (euristica e semantica)
     n = notes.lower()
     if "autocad" in n or "cad" in n or "dwg" in n:
-        base_protected.append({"title": "Progetti Tecnici AutoCAD (.dwg)", "path": "Progetti CAD Utente", "icon": "📐"})
+        base_protected.append({"title": "Progetti Tecnici AutoCAD (.dwg)", "path": "Progetti CAD Utente", "real_paths": [os.path.join(user_home, "Documents", "CAD")], "icon": "📐"})
     if "blender" in n or "3d" in n:
-        base_protected.append({"title": "File e Asset Blender 3D (.blend)", "path": "Asset e Sceneggiature 3D", "icon": "🧊"})
+        base_protected.append({"title": "File e Asset Blender 3D (.blend)", "path": "Asset e Sceneggiature 3D", "real_paths": [os.path.join(user_home, "Documents", "Blender")], "icon": "🧊"})
     if "foto" in n or "ricordi" in n:
-        base_protected.append({"title": "Archivio Fotografico Personale", "path": os.path.join(user_home, "Pictures"), "icon": "📸"})
+        base_protected.append({"title": "Archivio Fotografico Personale", "path": os.path.join(user_home, "Pictures"), "real_paths": [os.path.join(user_home, "Pictures")], "icon": "📸"})
     if "codice" in n or "github" in n or "programmazion" in n or "sviluppo" in n or "ai" in n:
-        base_protected.append({"title": "Repository, Script & Pesi Modelli AI", "path": "Cartelle Progetti Dev, Git & Ambienti AI", "icon": "🤖"})
+        base_protected.append({"title": "Repository, Script & Pesi Modelli AI", "path": "Cartelle Progetti Dev, Git & Ambienti AI", "real_paths": [os.path.join(user_home, "Documents", "GitHub")], "icon": "🤖"})
 
     return base_protected
 
@@ -285,9 +315,9 @@ def enrich_app_info(name, command, enabled):
         "command": command,
         "enabled": enabled,
         "impact": "Medio",
-        "description": "Processo impostato per l'esecuzione automatica ad ogni accensione.",
-        "advice": "Puoi disattivarlo se non ti serve subito all'avvio.",
-        "safe_to_disable": True,
+        "description": "Programma non riconosciuto impostato per l'esecuzione automatica.",
+        "advice": "Programma non riconosciuto — verifica di cosa si tratta prima di disattivarlo.",
+        "safe_to_disable": "unknown",
         "icon": "⚡"
     }
     for key, data in KNOWN_APPS_INFO.items():
@@ -310,8 +340,8 @@ def list_startup_apps():
             name, val, _ = winreg.EnumValue(key, i)
             items.append(enrich_app_info(name, val, True))
         winreg.CloseKey(key)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Errore lettura Run: {e}")
     # Disabled in Run_PCMio_Disabled
     try:
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run_PCMio_Disabled")
@@ -319,8 +349,8 @@ def list_startup_apps():
             name, val, _ = winreg.EnumValue(key, i)
             items.append(enrich_app_info(name, val, False))
         winreg.CloseKey(key)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Errore lettura Run_PCMio_Disabled: {e}")
     return items
 
 def toggle_startup_app(app_name, enable):
@@ -338,7 +368,8 @@ def toggle_startup_app(app_name, enable):
             winreg.SetValueEx(k_run, app_name, 0, winreg.REG_SZ, val)
             winreg.CloseKey(k_run)
             return True
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Errore toggle enable {app_name}: {e}")
             return False
     else:
         try:
@@ -351,7 +382,8 @@ def toggle_startup_app(app_name, enable):
             winreg.SetValueEx(k_dis, app_name, 0, winreg.REG_SZ, val)
             winreg.CloseKey(k_dis)
             return True
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Errore toggle disable {app_name}: {e}")
             return False
 
 def delete_startup_app(app_name):
@@ -363,9 +395,33 @@ def delete_startup_app(app_name):
             winreg.DeleteValue(k, app_name)
             winreg.CloseKey(k)
             removed = True
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Errore delete {app_name} in {path}: {e}")
     return removed
+
+def count_installed_programs():
+    count = 0
+    try:
+        key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall")
+        count = winreg.QueryInfoKey(key)[0]
+        winreg.CloseKey(key)
+    except Exception as e:
+        logger.warning(f"Errore conteggio programmi: {e}")
+    return count
+
+def get_dir_size(path):
+    total = 0
+    try:
+        for dirpath, dirnames, filenames in os.walk(path):
+            for f in filenames:
+                fp = os.path.join(dirpath, f)
+                try:
+                    total += os.path.getsize(fp)
+                except OSError:
+                    pass
+    except OSError:
+        pass
+    return total
 
 def execute_system_scan(modules=None):
     if not modules:
@@ -386,9 +442,10 @@ def execute_system_scan(modules=None):
                     "title": f"Crash Dump di Cubase 12 ({len(dumps)} file .dmp)",
                     "path": cubase_dumps_dir,
                     "type": "folder_content",
+                    "files": [os.path.join(cubase_dumps_dir, f) for f in dumps],
                     "size_bytes": total_size,
                     "size_mb": round(total_size / (1024 * 1024), 2),
-                    "risk": "RISCHIO ZERO",
+                    "risk": "Rischio basso",
                     "risk_color": "green",
                     "description": f"Registri di crash passati accumulati in Documenti. Cubase funzionerà regolarmente senza di essi."
                 })
@@ -405,7 +462,7 @@ def execute_system_scan(modules=None):
                 "type": "file",
                 "size_bytes": size,
                 "size_mb": round(size / (1024 * 1024), 2),
-                "risk": "RISCHIO ZERO",
+                "risk": "Rischio basso",
                 "risk_color": "green",
                 "description": "Archivio zip del progetto già estratto e attivo nella cartella adiacente."
             })
@@ -414,14 +471,15 @@ def execute_system_scan(modules=None):
     if "user_home" in modules:
         user_nm = os.path.join(user_home, "node_modules")
         if os.path.exists(user_nm):
+            nm_size = get_dir_size(user_nm)
             findings.append({
                 "id": "user_node_modules",
                 "title": "Cartella node_modules accidentale in Home Utente",
                 "path": user_nm,
                 "type": "folder",
-                "size_bytes": 12 * 1024 * 1024,
-                "size_mb": 12.0,
-                "risk": "RISCHIO ZERO",
+                "size_bytes": nm_size,
+                "size_mb": round(nm_size / (1024 * 1024), 2),
+                "risk": "Rischio basso",
                 "risk_color": "green",
                 "description": "Dipendenza creata per errore da un comando npm install lanciato nella directory utente."
             })
@@ -438,9 +496,10 @@ def execute_system_scan(modules=None):
                     "title": f"Cache Runtime Electron ({len(zips)} archivi zip di build passate)",
                     "path": electron_cache,
                     "type": "folder_content",
+                    "files": [os.path.join(electron_cache, f) for f in zips],
                     "size_bytes": total_size,
                     "size_mb": round(total_size / (1024 * 1024), 2),
-                    "risk": "RISCHIO ZERO",
+                    "risk": "Rischio basso",
                     "risk_color": "green",
                     "description": "Binari scaricati in passato durante l'impacchettamento di applicazioni desktop."
                 })
@@ -448,14 +507,15 @@ def execute_system_scan(modules=None):
         # 5. Scansione cartella anomala 'on' in Roaming
         on_folder = os.path.join(user_home, "AppData", "Roaming", "on")
         if os.path.exists(on_folder):
+            on_size = get_dir_size(on_folder)
             findings.append({
                 "id": "roaming_on",
                 "title": "Cartella anomala 'on' in AppData Roaming",
                 "path": on_folder,
                 "type": "folder",
-                "size_bytes": 7 * 1024 * 1024,
-                "size_mb": 7.0,
-                "risk": "RISCHIO ZERO",
+                "size_bytes": on_size,
+                "size_mb": round(on_size / (1024 * 1024), 2),
+                "risk": "Rischio basso",
                 "risk_color": "green",
                 "description": "Contiene DLL runtime sparse e un file .odp derivanti da un'estrazione errata."
             })
@@ -463,14 +523,15 @@ def execute_system_scan(modules=None):
         # 6. Scansione Installer Antares in Downloaded Installations
         antares_installer = os.path.join(user_home, "AppData", "Local", "Downloaded Installations")
         if os.path.exists(antares_installer):
+            ant_size = get_dir_size(antares_installer)
             findings.append({
                 "id": "antares_msi",
                 "title": "Installer residuo Antares Auto-Tune Pro.msi",
                 "path": antares_installer,
                 "type": "folder",
-                "size_bytes": 161 * 1024 * 1024,
-                "size_mb": 161.3,
-                "risk": "RISCHIO ZERO",
+                "size_bytes": ant_size,
+                "size_mb": round(ant_size / (1024 * 1024), 2),
+                "risk": "Rischio basso",
                 "risk_color": "green",
                 "description": "Pacchetto di installazione temporaneo mai ripulito dopo il completamento del setup."
             })
@@ -526,7 +587,7 @@ def execute_system_scan(modules=None):
 {items_list_str}
 
 Fai una breve sintesi di 2 o 3 frasi in italiano con tono Street Gaming professionale:
-1. Conferma i file trovati e lo spazio totale liberabile a rischio zero.
+1. Conferma i file trovati e lo spazio totale liberabile a rischio basso.
 2. Rassicura l'utente che i file saranno messi in Quarantena Protetta reversibile e non eliminati a freddo.
 Non inventare altri file e non dare consigli generici di comprare hardware."""
         req_data = json.dumps({
@@ -538,8 +599,8 @@ Non inventare altri file e non dare consigli generici di comprare hardware."""
         with urllib.request.urlopen(req, timeout=20) as res:
             res_json = json.loads(res.read().decode())
             ai_summary = res_json.get("response", ai_summary)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Errore generazione sintesi AI: {e}")
 
     return {
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -560,37 +621,72 @@ def move_to_quarantine(item_ids, all_findings):
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     
+    # Load user profile for guardrails
+    user_prof = get_user_profile()
+    protected_rules = user_prof.get("protected_paths", [])
+    
+    def is_path_protected(path):
+        norm_path = os.path.normcase(os.path.abspath(path))
+        for rule in protected_rules:
+            for rp in rule.get("real_paths", []):
+                norm_rp = os.path.normcase(os.path.abspath(rp))
+                if norm_path.startswith(norm_rp):
+                    return True
+        return False
+
     moved_count = 0
     total_freed_bytes = 0
     errors = []
     
     for f in all_findings:
         if f["id"] in item_ids and f["type"] != "alert_only":
-            source_path = f["path"]
-            if os.path.exists(source_path):
-                dest_path = os.path.join(batch_dir, os.path.basename(source_path))
-                try:
-                    # Sposta in quarantena
-                    shutil.move(source_path, dest_path)
-                    cur.execute(
-                        "INSERT INTO quarantine_ledger (batch_id, original_path, quarantined_path, file_size_bytes, status, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
-                        (batch_id, source_path, dest_path, f["size_bytes"], "QUARANTINED", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                    )
-                    moved_count += 1
-                    total_freed_bytes += f["size_bytes"]
-                    
-                    # AUTO-LEARNING: Salva la nuova skill nel cervello SQLite
+            paths_to_move = []
+            if "files" in f and f["files"]:
+                paths_to_move = f["files"]
+            else:
+                paths_to_move = [f["path"]]
+                
+            for source_path in paths_to_move:
+                if os.path.exists(source_path):
+                    if is_path_protected(source_path):
+                        msg = f"Guardrail scudo attivo: {source_path} protetto."
+                        logger.warning(msg)
+                        errors.append(msg)
+                        continue
+                        
+                    dest_path = os.path.join(batch_dir, os.path.basename(source_path))
+                    # Prevent overwriting in batch_dir if multiple files have same name
+                    if os.path.exists(dest_path):
+                        dest_path = os.path.join(batch_dir, f"{os.path.basename(os.path.dirname(source_path))}_{os.path.basename(source_path)}")
+                        
                     try:
-                        cur.execute("SELECT id FROM learned_footprints WHERE software_name = ?", (f["title"],))
-                        if not cur.fetchone():
-                            cur.execute(
-                                "INSERT INTO learned_footprints (software_name, description, known_paths, learned_date, confidence) VALUES (?, ?, ?, ?, ?)",
-                                (f["title"], f"Pattern validato ed isolato: {f['description']}", source_path, datetime.now().strftime("%Y-%m-%d"), 1.0)
-                            )
-                    except Exception:
-                        pass
-                except Exception as e:
-                    errors.append(f"Errore su {source_path}: {str(e)}")
+                        # Sposta in quarantena
+                        shutil.move(source_path, dest_path)
+                        file_size = os.path.getsize(dest_path) if os.path.exists(dest_path) else 0
+                        if "files" in f:
+                            # per file we might not have individual sizes, let's calculate or just use total/len
+                            pass
+                        cur.execute(
+                            "INSERT INTO quarantine_ledger (batch_id, original_path, quarantined_path, file_size_bytes, status, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
+                            (batch_id, source_path, dest_path, file_size, "QUARANTINED", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                        )
+                        moved_count += 1
+                        # Wait, we need to accumulate total_freed_bytes correctly.
+                        total_freed_bytes += file_size
+                    except Exception as e:
+                        errors.append(f"Errore su {source_path}: {str(e)}")
+            
+            # AUTO-LEARNING: Salva la nuova skill nel cervello SQLite
+            try:
+                cur.execute("SELECT id FROM learned_footprints WHERE software_name = ?", (f["title"],))
+                if not cur.fetchone():
+                    cur.execute(
+                        "INSERT INTO learned_footprints (software_name, description, known_paths, learned_date, confidence) VALUES (?, ?, ?, ?, ?)",
+                        (f["title"], f"Pattern validato ed isolato: {f['description']}", f["path"], datetime.now().strftime("%Y-%m-%d"), 1.0)
+                    )
+            except Exception as e:
+                pass
+
                     
     conn.commit()
     conn.close()
@@ -626,6 +722,16 @@ def rollback_last_quarantine():
             try:
                 # Ripristina al percorso originale
                 os.makedirs(os.path.dirname(orig_path), exist_ok=True)
+                
+                if os.path.exists(orig_path):
+                    if os.path.isfile(orig_path):
+                        bak_path = orig_path + ".bak"
+                        shutil.move(orig_path, bak_path)
+                        logger.warning(f"Conflitto file durante rollback: {orig_path} rinominato in {bak_path}")
+                    elif os.path.isdir(orig_path):
+                        orig_path = orig_path + ".restored_conflict"
+                        logger.warning(f"Conflitto directory durante rollback: ripristinato in {orig_path}")
+                
                 shutil.move(quar_path, orig_path)
                 cur.execute("UPDATE quarantine_ledger SET status = 'RESTORED' WHERE id = ?", (rec_id,))
                 restored_count += 1
@@ -652,12 +758,12 @@ def purge_all_quarantine():
             for f in files:
                 try:
                     total_purged_bytes += os.path.getsize(os.path.join(root, f))
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Errore getsize su {f}: {e}")
         try:
             shutil.rmtree(QUARANTINE_DIR)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Errore rmtree quarantena: {e}")
         os.makedirs(QUARANTINE_DIR, exist_ok=True)
         
     cur.execute("UPDATE quarantine_ledger SET status = 'PURGED' WHERE status = 'QUARANTINED'")
@@ -684,8 +790,8 @@ def get_quarantine_stats():
                         try:
                             total_bytes += os.path.getsize(os.path.join(root, f))
                             files_count += 1
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.warning(f"Errore stats {f}: {e}")
     return {
         "exists": os.path.exists(QUARANTINE_DIR),
         "total_mb": round(total_bytes / (1024 * 1024), 2),
@@ -711,8 +817,8 @@ def auto_purge_expired_batches(days=14):
                     shutil.rmtree(batch_folder, ignore_errors=True)
                 cur.execute("UPDATE quarantine_ledger SET status = 'PURGED_AUTO' WHERE batch_id = ?", (batch_id,))
                 purged_batches.append(batch_id)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Errore auto purge per batch {batch_id}: {e}")
             
     conn.commit()
     conn.close()
@@ -721,32 +827,39 @@ def auto_purge_expired_batches(days=14):
 # 5. SERVER HTTP NATIVO PYTHON CON ENDPOINT REST
 class PCMioHandler(BaseHTTPRequestHandler):
     
+    def _validate_token(self):
+        token = self.headers.get('X-PC-MIO-Token', '')
+        return token == SESSION_TOKEN
+
     def _send_json(self, status_code, data):
         self.send_response(status_code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", "http://127.0.0.1:8765")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-PC-MIO-Token")
         self.end_headers()
         self.wfile.write(json.dumps(data, ensure_ascii=False).encode("utf-8"))
 
     def do_OPTIONS(self):
         self.send_response(200)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", "http://127.0.0.1:8765")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-PC-MIO-Token")
         self.end_headers()
 
     def do_GET(self):
         if self.path in ("/", "/index.html"):
             index_file = os.path.join(PROJECT_DIR, "index.html")
             if os.path.exists(index_file):
-                with open(index_file, "rb") as f:
-                    content = f.read()
+                with open(index_file, "r", encoding="utf-8") as f:
+                    content_str = f.read()
+                # Inject token (assuming placeholder exists, e.g., in a meta tag or script)
+                content_str = content_str.replace("{{SESSION_TOKEN}}", SESSION_TOKEN)
+                content = content_str.encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.send_header("Content-Length", str(len(content)))
-                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Access-Control-Allow-Origin", "http://127.0.0.1:8765")
                 self.end_headers()
                 self.wfile.write(content)
             else:
@@ -759,7 +872,7 @@ class PCMioHandler(BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header("Content-Type", "image/png")
                 self.send_header("Content-Length", str(len(content)))
-                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Access-Control-Allow-Origin", "http://127.0.0.1:8765")
                 self.end_headers()
                 self.wfile.write(content)
             else:
@@ -772,7 +885,7 @@ class PCMioHandler(BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header("Content-Type", "image/jpeg")
                 self.send_header("Content-Length", str(len(content)))
-                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Access-Control-Allow-Origin", "http://127.0.0.1:8765")
                 self.end_headers()
                 self.wfile.write(content)
             else:
@@ -781,6 +894,8 @@ class PCMioHandler(BaseHTTPRequestHandler):
             ollama_status = check_ollama()
             total, used, free = shutil.disk_usage("C:\\")
             self._send_json(200, {
+                "app_id": "pcmio",
+                "token": SESSION_TOKEN,
                 "system": "Windows x64",
                 "disk_free_gb": round(free / (1024**3), 1),
                 "disk_total_gb": round(total / (1024**3), 1),
@@ -805,6 +920,10 @@ class PCMioHandler(BaseHTTPRequestHandler):
             self._send_json(404, {"error": "Endpoint non trovato"})
 
     def do_POST(self):
+        if not self._validate_token():
+            self._send_json(403, {"error": "Invalid token"})
+            return
+
         content_len = int(self.headers.get("Content-Length", 0))
         post_body = self.rfile.read(content_len) if content_len > 0 else b"{}"
         body_json = json.loads(post_body.decode()) if post_body else {}
@@ -824,7 +943,7 @@ class PCMioHandler(BaseHTTPRequestHandler):
             cur = conn.cursor()
             cur.execute(
                 "INSERT INTO audit_snapshots (timestamp, installed_count, anomalies_count, free_gb, report_summary) VALUES (?, ?, ?, ?, ?)",
-                (result["timestamp"], 42, len(result["findings"]), 112.0, result["ai_summary"])
+                (result["timestamp"], count_installed_programs(), len(result["findings"]), shutil.disk_usage('C:\\').free / (1024**3), result["ai_summary"])
             )
             conn.commit()
             conn.close()
