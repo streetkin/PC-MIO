@@ -975,7 +975,7 @@
 
         let actionButtonHtml = "";
         let badgeColor = "bg-blue-50 text-blue-700 border-blue-200";
-        let icon = "📋";
+        let icon = f.icon || "🧹";
 
         if (f.id === "startup_optimizer") {
           icon = "🚀";
@@ -995,8 +995,16 @@
               <span>➔</span>
             </button>
           `;
+        } else if (f.type === "recycle_bin") {
+          icon = "🗑️";
+          badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
+          actionButtonHtml = `
+            <button onclick="eseguiPuliziaSingola('${f.id}')" class="btn-primary text-xs shrink-0 flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20">
+              <span>Svuota Cestino (${f.size_mb} MB)</span>
+              <span>✓</span>
+            </button>
+          `;
         } else {
-          icon = "🧹";
           badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
           actionButtonHtml = `
             <button onclick="eseguiPuliziaSingola('${f.id}')" class="btn-primary text-xs shrink-0 flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20">

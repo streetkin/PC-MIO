@@ -8,6 +8,8 @@ import winreg
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from datetime import datetime
 import threading
+import time
+import ctypes
 import logging
 from logging.handlers import RotatingFileHandler
 import secrets
@@ -421,12 +423,193 @@ def get_dir_size(path):
 
 def execute_system_scan(modules=None):
     if not modules:
-        modules = ["ghost_apps", "incomplete_installs", "duplicates", "crashes", "user_home", "privacy", "startup"]
+        modules = [
+            "temp_files",
+            "windows_update",
+            "browser_cache",
+            "downloads_cleanup",
+            "recycle_bin",
+            "ghost_apps",
+            "incomplete_installs",
+            "duplicates",
+            "crashes",
+            "user_home",
+            "privacy",
+            "startup"
+        ]
         
     user_home = os.path.expanduser("~")
     findings = []
-    
-    # 1. Scansione Crash Dump di Cubase
+    now_ts = time.time()
+
+    # 1. Engine File Temporanei di Windows (%TEMP% e C:\Windows\Temp)
+    if "temp_files" in modules:
+        temp_candidates = []
+        user_temp = os.environ.get("TEMP")
+        temp_dirs = [user_temp] if user_temp and os.path.exists(user_temp) else []
+        win_temp = r"C:\Windows\Temp"
+        if os.path.exists(win_temp):
+            temp_dirs.append(win_temp)
+            
+        for tdir in temp_dirs:
+            try:
+                for f in os.listdir(tdir):
+                    fp = os.path.join(tdir, f)
+                    try:
+                        # Considera solo file non modificati nelle ultime 24 ore
+                        if os.path.isfile(fp) and (now_ts - os.path.getmtime(fp)) > 86400:
+                            temp_candidates.append(fp)
+                    except (OSError, PermissionError):
+                        pass
+            except (OSError, PermissionError):
+                pass
+
+        if temp_candidates:
+            total_size = sum(os.path.getsize(f) for f in temp_candidates if os.path.exists(f))
+            if total_size > 5 * 1024 * 1024:  # Almeno 5 MB
+                findings.append({
+                    "id": "user_temp_files",
+                    "title": f"File Temporanei di Windows ({len(temp_candidates)} file orfani)",
+                    "path": user_temp or "Cartelle Temp",
+                    "type": "folder_content",
+                    "files": temp_candidates[:300],
+                    "size_bytes": total_size,
+                    "size_mb": round(total_size / (1024 * 1024), 2),
+                    "risk": "Rischio basso",
+                    "risk_color": "green",
+                    "icon": "🧹",
+                    "description": "File e registri temporanei creati da programmi chiusi nelle sessioni precedenti e mai ripuliti."
+                })
+
+    # 2. Engine Residui Windows Update (SoftwareDistribution\Download)
+    if "windows_update" in modules:
+        wu_dir = r"C:\Windows\SoftwareDistribution\Download"
+        if os.path.exists(wu_dir):
+            wu_files = []
+            try:
+                for root, dirs, files in os.walk(wu_dir):
+                    for f in files:
+                        fp = os.path.join(root, f)
+                        try:
+                            if os.path.isfile(fp) and (now_ts - os.path.getmtime(fp)) > 7 * 86400:
+                                wu_files.append(fp)
+                        except (OSError, PermissionError):
+                            pass
+            except (OSError, PermissionError):
+                pass
+                
+            if wu_files:
+                wu_size = sum(os.path.getsize(f) for f in wu_files if os.path.exists(f))
+                if wu_size > 10 * 1024 * 1024:  # Almeno 10 MB
+                    findings.append({
+                        "id": "windows_update_cache",
+                        "title": f"Residui Pacchetti Windows Update ({len(wu_files)} file)",
+                        "path": wu_dir,
+                        "type": "folder_content",
+                        "files": wu_files[:200],
+                        "size_bytes": wu_size,
+                        "size_mb": round(wu_size / (1024 * 1024), 2),
+                        "risk": "Rischio basso",
+                        "risk_color": "green",
+                        "icon": "🔄",
+                        "description": "Pacchetti di aggiornamenti Windows già installati nel sistema e non più necessari per il funzionamento."
+                    })
+
+    # 3. Engine Cache Browser Web (Chrome, Edge, Brave)
+    if "browser_cache" in modules:
+        cache_locations = [
+            ("Microsoft Edge", os.path.join(user_home, r"AppData\Local\Microsoft\Edge\User Data\Default\Cache\Cache_Data")),
+            ("Google Chrome", os.path.join(user_home, r"AppData\Local\Google\Chrome\User Data\Default\Cache\Cache_Data")),
+            ("Brave", os.path.join(user_home, r"AppData\Local\BraveSoftware\Brave-Browser\User Data\Default\Cache\Cache_Data"))
+        ]
+        browser_files = []
+        browsers_found = []
+        for b_name, b_path in cache_locations:
+            if os.path.exists(b_path):
+                try:
+                    b_list = [os.path.join(b_path, f) for f in os.listdir(b_path) if os.path.isfile(os.path.join(b_path, f))]
+                    if b_list:
+                        browser_files.extend(b_list)
+                        browsers_found.append(b_name)
+                except (OSError, PermissionError):
+                    pass
+                    
+        if browser_files:
+            b_total_size = sum(os.path.getsize(f) for f in browser_files if os.path.exists(f))
+            if b_total_size > 10 * 1024 * 1024:  # Almeno 10 MB
+                findings.append({
+                    "id": "browser_cache_files",
+                    "title": f"Cache Temporanea Browser Web ({', '.join(browsers_found)})",
+                    "path": "AppData Cache Browser",
+                    "type": "folder_content",
+                    "files": browser_files[:400],
+                    "size_bytes": b_total_size,
+                    "size_mb": round(b_total_size / (1024 * 1024), 2),
+                    "risk": "Rischio basso",
+                    "risk_color": "green",
+                    "icon": "🌐",
+                    "description": "Immagini ed elementi grafici memorizzati dai browser per velocizzare i siti web. Cookie, password e cronologia NON vengono toccati."
+                })
+
+    # 4. Engine Installer Obsoleti in Download (> 30 giorni)
+    if "downloads_cleanup" in modules:
+        dl_dir = os.path.join(user_home, "Downloads")
+        if os.path.exists(dl_dir):
+            old_installers = []
+            try:
+                for f in os.listdir(dl_dir):
+                    fp = os.path.join(dl_dir, f)
+                    try:
+                        if os.path.isfile(fp) and f.lower().endswith((".exe", ".msi", ".iso")) and (now_ts - os.path.getmtime(fp)) > 30 * 86400:
+                            old_installers.append(fp)
+                    except (OSError, PermissionError):
+                        pass
+            except (OSError, PermissionError):
+                pass
+                
+            if old_installers:
+                dl_size = sum(os.path.getsize(f) for f in old_installers if os.path.exists(f))
+                findings.append({
+                    "id": "downloads_installers",
+                    "title": f"Installer Obsoleti in Download ({len(old_installers)} file)",
+                    "path": dl_dir,
+                    "type": "folder_content",
+                    "files": old_installers,
+                    "size_bytes": dl_size,
+                    "size_mb": round(dl_size / (1024 * 1024), 2),
+                    "risk": "Rischio basso",
+                    "risk_color": "green",
+                    "icon": "📦",
+                    "description": "File di installazione (.exe, .msi, .iso) scaricati da più di 30 giorni e rimasti nella cartella Download."
+                })
+
+    # 5. Engine Cestino di Windows
+    if "recycle_bin" in modules:
+        try:
+            class SHQUERYRBINFO(ctypes.Structure):
+                _fields_ = [('cbSize', ctypes.c_ulong),
+                            ('i64Size', ctypes.c_int64),
+                            ('i64NumItems', ctypes.c_int64)]
+            rbinfo = SHQUERYRBINFO()
+            rbinfo.cbSize = ctypes.sizeof(SHQUERYRBINFO)
+            if ctypes.windll.shell32.SHQueryRecycleBinW('C:\\', ctypes.byref(rbinfo)) == 0:
+                if rbinfo.i64Size > 50 * 1024 * 1024 and rbinfo.i64NumItems > 0:  # Almeno 50 MB
+                    findings.append({
+                        "id": "recycle_bin_clean",
+                        "title": f"Cestino di Windows ({rbinfo.i64NumItems} file eliminati)",
+                        "path": "Cestino di Sistema (C:\\)",
+                        "type": "recycle_bin",
+                        "size_bytes": rbinfo.i64Size,
+                        "size_mb": round(rbinfo.i64Size / (1024 * 1024), 2),
+                        "risk": "Rischio basso",
+                        "risk_color": "green",
+                        "icon": "🗑️",
+                        "description": "File cestinati in passato che occupano ancora spazio fisico sul disco principale."
+                    })
+        except Exception as e:
+            logger.warning(f"Errore controllo Cestino: {e}")
+
+    # 6. Scansione Crash Dump di Cubase
     if "crashes" in modules:
         cubase_dumps_dir = os.path.join(user_home, "Documents", "Steinberg", "CrashDumps")
         if os.path.exists(cubase_dumps_dir):
@@ -637,10 +820,17 @@ def move_to_quarantine(item_ids, all_findings):
             return False
 
     user_home = os.path.expanduser("~")
-    # Eccezioni esplicitamente autorizzate dallo scanner (es. crash dump di Cubase in Documents)
-    allowed_exceptions = [
-        os.path.join(user_home, "Documents", "Steinberg", "CrashDumps")
+    # Eccezioni esplicitamente autorizzate dallo scanner
+    raw_exceptions = [
+        os.path.join(user_home, "Documents", "Steinberg", "CrashDumps"),
+        os.environ.get("TEMP", ""),
+        r"C:\Windows\Temp",
+        r"C:\Windows\SoftwareDistribution\Download",
+        os.path.join(user_home, r"AppData\Local\Microsoft\Edge\User Data\Default\Cache"),
+        os.path.join(user_home, r"AppData\Local\Google\Chrome\User Data\Default\Cache"),
+        os.path.join(user_home, r"AppData\Local\BraveSoftware\Brave-Browser\User Data\Default\Cache")
     ]
+    allowed_exceptions = [e for e in raw_exceptions if e and os.path.exists(e)]
 
     def is_path_protected(path):
         for exc in allowed_exceptions:
@@ -659,6 +849,18 @@ def move_to_quarantine(item_ids, all_findings):
     
     for f in all_findings:
         if f["id"] in item_ids and f["type"] != "alert_only":
+            if f["type"] == "recycle_bin":
+                try:
+                    res = ctypes.windll.shell32.SHEmptyRecycleBinW(None, None, 7)
+                    if res == 0:
+                        moved_count += 1
+                        total_freed_bytes += f.get("size_bytes", 0)
+                    else:
+                        errors.append(f"Avviso svuotamento Cestino (codice {res})")
+                except Exception as e:
+                    errors.append(f"Errore Cestino: {e}")
+                continue
+
             paths_to_move = []
             if "files" in f and f["files"]:
                 paths_to_move = f["files"]
