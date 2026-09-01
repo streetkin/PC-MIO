@@ -643,6 +643,103 @@
     </div>
   </div>
 
+  <!-- ======================================================== -->
+  <!-- MODALE: DIALOGO DI CONFERMA UNIVERSALE (MATERIAL 3)     -->
+  <!-- ======================================================== -->
+  <div id="modal-confirm" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="g-card max-w-md w-full p-6 text-center space-y-4 shadow-2xl animate-fade-in">
+      
+      <div id="confirm-icon-box" class="w-16 h-16 rounded-3xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center text-3xl mx-auto shadow-xs">
+        <span id="confirm-icon">🛡️</span>
+      </div>
+
+      <div class="space-y-1.5">
+        <h3 class="text-base font-extrabold text-slate-900" id="confirm-title">
+          Conferma Operazione
+        </h3>
+        <p class="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed" id="confirm-desc">
+          Sei sicuro di voler procedere?
+        </p>
+      </div>
+
+      <div class="flex space-x-3 pt-2">
+        <button id="confirm-btn-cancel" class="btn-secondary text-xs w-full py-2.5">
+          Annulla
+        </button>
+        <button id="confirm-btn-ok" class="btn-primary text-xs w-full py-2.5">
+          Conferma
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODALE: AVVISO / NOTIFICA OPERAZIONE (MATERIAL 3)       -->
+  <!-- ======================================================== -->
+  <div id="modal-notice" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="g-card max-w-md w-full p-6 text-center space-y-4 shadow-2xl animate-fade-in">
+      
+      <div id="notice-icon-box" class="w-16 h-16 rounded-3xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center text-3xl mx-auto shadow-xs">
+        <span id="notice-icon">✓</span>
+      </div>
+
+      <div class="space-y-1.5">
+        <h3 class="text-base font-extrabold text-slate-900" id="notice-title">
+          Operazione Completata
+        </h3>
+        <p class="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed whitespace-pre-line" id="notice-desc">
+          Dettaglio dell'operazione.
+        </p>
+      </div>
+
+      <div class="pt-2">
+        <button id="notice-btn-ok" class="btn-primary text-xs w-full py-2.5">
+          Ho Capito
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODALE: SVUOTA CASSAFORTE DEFINITIVO (DANGER ZONE)       -->
+  <!-- ======================================================== -->
+  <div id="modal-purge-vault" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="g-card max-w-md w-full p-6 text-center space-y-4 shadow-2xl animate-fade-in border border-red-200">
+      
+      <div class="w-16 h-16 rounded-3xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center text-3xl mx-auto shadow-xs">
+        ⚠️
+      </div>
+
+      <div class="space-y-1.5">
+        <h3 class="text-base font-extrabold text-slate-900">
+          Svuotamento Definitivo Quarantena
+        </h3>
+        <p class="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+          I file in quarantena saranno eliminati <strong>per sempre</strong> dal disco senza alcuna possibilità di ripristino o rollback.
+        </p>
+      </div>
+
+      <div class="p-3 bg-red-50/70 border border-red-100 rounded-xl text-left space-y-2">
+        <label class="text-[11px] font-bold text-red-800 block">
+          Per confermare, digita <span class="font-mono bg-red-100 px-1 py-0.5 rounded text-red-900">ELIMINA</span>:
+        </label>
+        <input type="text" id="purge-confirm-input" placeholder="Scrivi ELIMINA in maiuscolo" class="w-full p-2.5 text-xs font-mono text-center uppercase tracking-widest bg-white border border-red-200 rounded-lg focus:border-red-500 focus:outline-none transition">
+      </div>
+
+      <div class="flex space-x-3 pt-1">
+        <button onclick="chiudiModale('modal-purge-vault')" class="btn-secondary text-xs w-full py-2.5">
+          Annulla
+        </button>
+        <button id="purge-confirm-btn" disabled class="btn-danger text-xs w-full py-2.5 opacity-40 cursor-not-allowed transition-all">
+          Elimina per Sempre
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- JAVASCRIPT GOOGLE STYLE ENGINE -->
   <script>
     const API_BASE = "http://127.0.0.1:8765";
@@ -661,6 +758,125 @@
         },
         body: JSON.stringify(body)
       });
+    }
+
+    // Helper: Dialogo di Conferma Material 3 (Promise)
+    function mostraConferma({ icon = "🛡️", iconBg = "bg-emerald-50", iconBorder = "border-emerald-200", iconColor = "text-emerald-600", title = "Conferma Operazione", message = "", confirmText = "Conferma", confirmClass = "btn-primary" } = {}) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('modal-confirm');
+        const iconBox = document.getElementById('confirm-icon-box');
+        const iconEl = document.getElementById('confirm-icon');
+        const titleEl = document.getElementById('confirm-title');
+        const descEl = document.getElementById('confirm-desc');
+        const btnOk = document.getElementById('confirm-btn-ok');
+        const btnCancel = document.getElementById('confirm-btn-cancel');
+
+        iconBox.className = `w-16 h-16 rounded-3xl ${iconBg} border ${iconBorder} ${iconColor} flex items-center justify-center text-3xl mx-auto shadow-xs`;
+        iconEl.innerText = icon;
+        titleEl.innerText = title;
+        descEl.innerText = message;
+        btnOk.innerText = confirmText;
+        btnOk.className = `${confirmClass} text-xs w-full py-2.5`;
+
+        modal.classList.remove('hidden');
+
+        function cleanup() {
+          modal.classList.add('hidden');
+          btnOk.removeEventListener('click', onOk);
+          btnCancel.removeEventListener('click', onCancel);
+        }
+
+        function onOk() { cleanup(); resolve(true); }
+        function onCancel() { cleanup(); resolve(false); }
+
+        btnOk.addEventListener('click', onOk);
+        btnCancel.addEventListener('click', onCancel);
+      });
+    }
+
+    // Helper: Dialogo di Avviso / Esito Material 3 (Promise)
+    function mostraAvviso({ type = "success", title = "Notifica", message = "" } = {}) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('modal-notice');
+        const iconBox = document.getElementById('notice-icon-box');
+        const iconEl = document.getElementById('notice-icon');
+        const titleEl = document.getElementById('notice-title');
+        const descEl = document.getElementById('notice-desc');
+        const btnOk = document.getElementById('notice-btn-ok');
+
+        if (type === "success") {
+          iconBox.className = "w-16 h-16 rounded-3xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center text-3xl mx-auto shadow-xs";
+          iconEl.innerText = "✓";
+        } else if (type === "warning") {
+          iconBox.className = "w-16 h-16 rounded-3xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-3xl mx-auto shadow-xs";
+          iconEl.innerText = "⚡";
+        } else if (type === "error") {
+          iconBox.className = "w-16 h-16 rounded-3xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center text-3xl mx-auto shadow-xs";
+          iconEl.innerText = "✕";
+        } else {
+          iconBox.className = "w-16 h-16 rounded-3xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center text-3xl mx-auto shadow-xs";
+          iconEl.innerText = "ℹ️";
+        }
+
+        titleEl.innerText = title;
+        descEl.innerText = message;
+
+        modal.classList.remove('hidden');
+
+        function onOk() {
+          modal.classList.add('hidden');
+          btnOk.removeEventListener('click', onOk);
+          resolve();
+        }
+        btnOk.addEventListener('click', onOk);
+      });
+    }
+
+    // Helper: Modal Svuotamento Definitivo Cassaforte
+    function apriSvuotaQuarantenaModale() {
+      const modal = document.getElementById('modal-purge-vault');
+      const input = document.getElementById('purge-confirm-input');
+      const btn = document.getElementById('purge-confirm-btn');
+
+      input.value = "";
+      btn.disabled = true;
+      btn.classList.add('opacity-40', 'cursor-not-allowed');
+
+      input.oninput = () => {
+        if (input.value.trim().toUpperCase() === "ELIMINA") {
+          btn.disabled = false;
+          btn.classList.remove('opacity-40', 'cursor-not-allowed');
+        } else {
+          btn.disabled = true;
+          btn.classList.add('opacity-40', 'cursor-not-allowed');
+        }
+      };
+
+      btn.onclick = async () => {
+        chiudiModale('modal-purge-vault');
+        try {
+          const res = await postAPI(`${API_BASE}/api/quarantine/purge`);
+          const result = await res.json();
+          if (result.success) {
+            await mostraAvviso({
+              type: "success",
+              title: "Cassaforte Svuotata",
+              message: `I file in quarantena sono stati eliminati definitivamente dal disco (${result.purged_mb} MB liberati).`
+            });
+            caricaStatoQuarantena();
+            aggiornaDatiSistema();
+          }
+        } catch (e) {
+          await mostraAvviso({
+            type: "error",
+            title: "Errore Svuotamento",
+            message: "Si è verificato un errore: " + e.message
+          });
+        }
+      };
+
+      modal.classList.remove('hidden');
+      setTimeout(() => input.focus(), 150);
     }
 
     document.addEventListener("DOMContentLoaded", async () => {
@@ -734,7 +950,11 @@
       const notes = document.getElementById('onboard-notes').value.trim();
 
       if (cats.length === 0 && !notes) {
-        alert("Seleziona almeno una categoria o scrivi una breve descrizione dei tuoi file.");
+        await mostraAvviso({
+          type: "warning",
+          title: "Seleziona un Profilo",
+          message: "Seleziona almeno una categoria o scrivi una breve descrizione dei tuoi file per configurare lo Scudo."
+        });
         return;
       }
 
@@ -787,7 +1007,11 @@
           apriModale('modal-shield-success');
         }
       } catch (e) {
-        alert("Errore durante il salvataggio dello scudo: " + e.message);
+        await mostraAvviso({
+          type: "error",
+          title: "Errore Configurazione",
+          message: "Impossibile salvare lo scudo: " + e.message
+        });
       } finally {
         btn.innerText = "Attiva il Mio Scudo ➔";
         btn.classList.remove('opacity-50', 'pointer-events-none');
@@ -1046,7 +1270,11 @@
           document.getElementById('modal-startup').classList.remove('hidden');
         }
       } catch (e) {
-        alert("Errore nel caricamento delle applicazioni di avvio.");
+        await mostraAvviso({
+          type: "error",
+          title: "Errore Lettura Avvio",
+          message: "Impossibile leggere le applicazioni dal Registro di Windows: " + e.message
+        });
       }
     }
 
@@ -1135,21 +1363,45 @@
           avviaScansioneSilenziosa();
         }
       } catch (e) {
-        alert("Errore durante la modifica dell'applicazione.");
+        await mostraAvviso({
+          type: "error",
+          title: "Errore Modifica",
+          message: "Impossibile modificare lo stato dell'applicazione nell'avvio di Windows."
+        });
       }
     }
 
     async function rimuoviAppAvvio(appName) {
-      if (!confirm(`Sei sicuro di voler rimuovere definitivamente '${appName}' dall'avvio automatico di Windows? Non partirà mai più da solo all'accensione.`)) return;
+      const ok = await mostraConferma({
+        icon: "🗑️",
+        iconBg: "bg-red-50",
+        iconBorder: "border-red-200",
+        iconColor: "text-red-600",
+        title: "Rimuovere dall'Avvio?",
+        message: `Sei sicuro di voler rimuovere '${appName}' dall'avvio automatico di Windows? Non partirà mai più da solo all'accensione del PC.`,
+        confirmText: "Rimuovi Definitivamente",
+        confirmClass: "btn-danger"
+      });
+      if (!ok) return;
+
       try {
         const res = await postAPI(`${API_BASE}/api/startup/delete`, { name: appName });
         if (res.ok) {
           const data = await res.json();
           renderizzaAppAvvio(data.apps || []);
           avviaScansioneSilenziosa();
+          await mostraAvviso({
+            type: "success",
+            title: "Applicazione Rimossa",
+            message: `'${appName}' è stata rimossa con successo dall'avvio automatico di Windows.`
+          });
         }
       } catch (e) {
-        alert("Errore durante la rimozione dell'applicazione.");
+        await mostraAvviso({
+          type: "error",
+          title: "Errore Rimozione",
+          message: "Impossibile rimuovere l'applicazione: " + e.message
+        });
       }
     }
 
@@ -1169,58 +1421,100 @@
     }
 
     async function eseguiPuliziaSingola(itemId) {
-      if (!confirm("Confermi di voler mettere in sicurezza questo elemento nella Quarantena di PC MIO? (Ripristinabile in 1 clic per 14 giorni)")) return;
+      const finding = CURRENT_FINDINGS.find(f => f.id === itemId);
+      const isRecycle = finding && finding.type === "recycle_bin";
+
+      const ok = await mostraConferma({
+        icon: isRecycle ? "🗑️" : "🛡️",
+        iconBg: isRecycle ? "bg-amber-50" : "bg-emerald-50",
+        iconBorder: isRecycle ? "border-amber-200" : "border-emerald-200",
+        iconColor: isRecycle ? "text-amber-600" : "text-emerald-600",
+        title: isRecycle ? "Svuotare il Cestino?" : "Metti in Quarantena Protetta",
+        message: isRecycle
+          ? "Vuoi procedere allo svuotamento dei file presenti nel Cestino di Windows per liberare spazio su disco?"
+          : "I file saranno spostati nella Quarantena di sicurezza di PC MIO. Potrai ripristinarli al loro posto originario in qualsiasi momento per 14 giorni.",
+        confirmText: isRecycle ? "Svuota Cestino" : "Metti in Quarantena",
+        confirmClass: isRecycle ? "btn-danger" : "btn-primary bg-emerald-600 hover:bg-emerald-700"
+      });
+      if (!ok) return;
+
       try {
         const res = await postAPI(`${API_BASE}/api/quarantine`, { selected_ids: [itemId] });
         const result = await res.json();
         if (result.status === "success") {
-          alert(`Elemento messo in sicurezza. Spazio liberato: ${result.freed_mb} MB.`);
+          await mostraAvviso({
+            type: "success",
+            title: "Elemento Messo al Sicuro",
+            message: `Operazione completata con successo.\nSpazio su disco liberato: ${result.freed_mb} MB.`
+          });
         } else if (result.status === "partial") {
-          alert(`Operazione parziale: ${result.moved_count} elemento/i spostato/i (${result.freed_mb} MB).\n\nAvvisi:\n${result.errors.join('\n')}`);
+          await mostraAvviso({
+            type: "warning",
+            title: "Operazione Parziale",
+            message: `Spostati ${result.moved_count} file (${result.freed_mb} MB).\n\nAlcuni file sono stati protetti dallo Scudo:\n${result.errors.join('\n')}`
+          });
         } else {
-          alert(`Operazione bloccata o non riuscita:\n${result.errors && result.errors.length ? result.errors.join('\n') : 'Nessun file spostato.'}`);
+          await mostraAvviso({
+            type: "error",
+            title: "Operazione Bloccata",
+            message: result.errors && result.errors.length ? result.errors.join('\n') : "Nessun file è stato spostato per protezione dei Guardrail."
+          });
         }
         caricaStatoQuarantena();
         aggiornaDatiSistema();
         avviaScansioneSilenziosa();
       } catch (e) {
-        alert("Errore durante la pulizia: " + e.message);
+        await mostraAvviso({
+          type: "error",
+          title: "Errore durante la pulizia",
+          message: e.message
+        });
       }
     }
 
     async function eseguiRollback() {
-      if (!confirm("Vuoi ripristinare tutti i file dalla Quarantena ai loro percorsi originari?")) return;
+      const ok = await mostraConferma({
+        icon: "🔄",
+        iconBg: "bg-blue-50",
+        iconBorder: "border-blue-200",
+        iconColor: "text-blue-600",
+        title: "Ripristinare dalla Quarantena?",
+        message: "Tutti i file dell'ultima sessione di quarantena saranno ripristinati nei loro percorsi originali con risoluzione automatica dei conflitti.",
+        confirmText: "Ripristina File",
+        confirmClass: "btn-primary bg-blue-600 hover:bg-blue-700"
+      });
+      if (!ok) return;
+
       try {
         const res = await postAPI(`${API_BASE}/api/rollback`);
         const result = await res.json();
         if (result.success) {
-          alert(`Rollback completato! ${result.restored_count} elementi ripristinati.`);
+          await mostraAvviso({
+            type: "success",
+            title: "Rollback Completato",
+            message: `${result.restored_count} elemento/i ripristinato/i con successo nella posizione originale.`
+          });
           caricaStatoQuarantena();
           aggiornaDatiSistema();
           avviaScansioneSilenziosa();
+        } else {
+          await mostraAvviso({
+            type: "warning",
+            title: "Nessun Elemento",
+            message: result.message || "Nessun elemento da ripristinare."
+          });
         }
       } catch (e) {
-        alert("Errore durante il Rollback: " + e.message);
+        await mostraAvviso({
+          type: "error",
+          title: "Errore Rollback",
+          message: e.message
+        });
       }
     }
 
-    async function svuotaQuarantena() {
-      const conf = prompt("ATTENZIONE CRITICA: I file in quarantena saranno eliminati DEFINITIVAMENTE dal disco senza possibilità di recupero.\n\nPer confermare, scrivi ELIMINA in maiuscolo:");
-      if (conf !== "ELIMINA") {
-        if (conf !== null) alert("Operazione annullata. Devi digitare esattamente 'ELIMINA'.");
-        return;
-      }
-      try {
-        const res = await postAPI(`${API_BASE}/api/quarantine/purge`);
-        const result = await res.json();
-        if (result.success) {
-          alert("Quarantena svuotata definitivamente con successo!");
-          caricaStatoQuarantena();
-          aggiornaDatiSistema();
-        }
-      } catch (e) {
-        alert("Errore durante lo svuotamento: " + e.message);
-      }
+    function svuotaQuarantena() {
+      apriSvuotaQuarantenaModale();
     }
   </script>
 </body>

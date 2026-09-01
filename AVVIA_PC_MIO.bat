@@ -1,9 +1,9 @@
 @echo off
-title PC MIO - Street AI Edition
+title PC MIO - Assistente di Ottimizzazione e Sicurezza
 color 0A
 cls
 echo ========================================================
-echo          AVVIO DI PC MIO (STREET EDITION)
+echo          AVVIO DI PC MIO
 echo ========================================================
 echo.
 echo Avvio dell'applicazione desktop nativa in corso...

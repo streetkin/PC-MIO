@@ -4,7 +4,7 @@ title PC MIO - Installatore Ufficiale Windows
 color 0A
 
 echo ===============================================================================
-echo                PC MIO - STREET AI EDITION - SETUP INSTALLATORE
+echo            PC MIO - ASSISTENTE DI OTTIMIZZAZIONE E SICUREZZA
 echo ===============================================================================
 echo.
 echo   [+] Preparazione installazione sul sistema Windows...
@@ -28,10 +28,10 @@ if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 xcopy "%SOURCE_DIR%" "%INSTALL_DIR%\" /E /I /Y /Q >nul
 
 echo   [+] Creazione scorciatoia ufficiale sul DESKTOP...
-powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut([System.IO.Path]::Combine([System.Environment]::GetFolderPath('Desktop'), 'PC MIO.lnk')); $s.TargetPath = '%INSTALL_DIR%\PC_MIO.exe'; $s.WorkingDirectory = '%INSTALL_DIR%'; $s.Description = 'PC MIO - Street AI Edition'; $s.Save()"
+powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut([System.IO.Path]::Combine([System.Environment]::GetFolderPath('Desktop'), 'PC MIO.lnk')); $s.TargetPath = '%INSTALL_DIR%\PC_MIO.exe'; $s.WorkingDirectory = '%INSTALL_DIR%'; $s.Description = 'PC MIO - Assistente di Ottimizzazione e Sicurezza'; $s.Save()"
 
 echo   [+] Creazione voce nel MENU START di Windows...
-powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $startMenu = [System.IO.Path]::Combine([System.Environment]::GetFolderPath('StartMenu'), 'Programs'); $s = $ws.CreateShortcut([System.IO.Path]::Combine($startMenu, 'PC MIO.lnk')); $s.TargetPath = '%INSTALL_DIR%\PC_MIO.exe'; $s.WorkingDirectory = '%INSTALL_DIR%'; $s.Description = 'PC MIO - Street AI Edition'; $s.Save()"
+powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $startMenu = [System.IO.Path]::Combine([System.Environment]::GetFolderPath('StartMenu'), 'Programs'); $s = $ws.CreateShortcut([System.IO.Path]::Combine($startMenu, 'PC MIO.lnk')); $s.TargetPath = '%INSTALL_DIR%\PC_MIO.exe'; $s.WorkingDirectory = '%INSTALL_DIR%'; $s.Description = 'PC MIO - Assistente di Ottimizzazione e Sicurezza'; $s.Save()"
 
 echo.
 echo ===============================================================================
