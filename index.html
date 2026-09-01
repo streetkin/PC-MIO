@@ -1165,12 +1165,16 @@
       try {
         const res = await postAPI(`${API_BASE}/api/quarantine`, { selected_ids: [itemId] });
         const result = await res.json();
-        if (result.success) {
+        if (result.status === "success") {
           alert(`Elemento messo in sicurezza. Spazio liberato: ${result.freed_mb} MB.`);
-          caricaStatoQuarantena();
-          aggiornaDatiSistema();
-          avviaScansioneSilenziosa();
+        } else if (result.status === "partial") {
+          alert(`Operazione parziale: ${result.moved_count} elemento/i spostato/i (${result.freed_mb} MB).\n\nAvvisi:\n${result.errors.join('\n')}`);
+        } else {
+          alert(`Operazione bloccata o non riuscita:\n${result.errors && result.errors.length ? result.errors.join('\n') : 'Nessun file spostato.'}`);
         }
+        caricaStatoQuarantena();
+        aggiornaDatiSistema();
+        avviaScansioneSilenziosa();
       } catch (e) {
         alert("Errore durante la pulizia: " + e.message);
       }

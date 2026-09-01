@@ -16,3 +16,8 @@ env/
 # Log di sistema
 *.log
 logs/
+
+# Database SQLite locale runtime
+*.sqlite
+*.db
+

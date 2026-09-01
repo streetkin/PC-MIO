@@ -174,11 +174,7 @@ def get_user_profile():
         "profile_name": "Personalizzato",
         "categories": ["studio", "office"],
         "custom_notes": "",
-        "protected_paths": [
-            r"C:\Windows",
-            r"C:\Windows\System32",
-            os.path.join(os.path.expanduser("~"), "Documents")
-        ],
+        "protected_paths": deduce_shield_rules(["studio", "office"], ""),
         "is_onboarded": False
     }
 
@@ -521,20 +517,27 @@ def execute_system_scan(modules=None):
             })
 
         # 6. Scansione Installer Antares in Downloaded Installations
-        antares_installer = os.path.join(user_home, "AppData", "Local", "Downloaded Installations")
-        if os.path.exists(antares_installer):
-            ant_size = get_dir_size(antares_installer)
-            findings.append({
-                "id": "antares_msi",
-                "title": "Installer residuo Antares Auto-Tune Pro.msi",
-                "path": antares_installer,
-                "type": "folder",
-                "size_bytes": ant_size,
-                "size_mb": round(ant_size / (1024 * 1024), 2),
-                "risk": "Rischio basso",
-                "risk_color": "green",
-                "description": "Pacchetto di installazione temporaneo mai ripulito dopo il completamento del setup."
-            })
+        downloaded_dir = os.path.join(user_home, "AppData", "Local", "Downloaded Installations")
+        if os.path.exists(downloaded_dir):
+            antares_files = []
+            for root, dirs, files in os.walk(downloaded_dir):
+                for f in files:
+                    if f.lower().endswith(".msi") and any(k in f.lower() for k in ["antares", "auto-tune", "autotune"]):
+                        antares_files.append(os.path.join(root, f))
+            if antares_files:
+                total_size = sum(os.path.getsize(f) for f in antares_files if os.path.exists(f))
+                findings.append({
+                    "id": "antares_msi",
+                    "title": f"Installer residuo Antares Auto-Tune ({len(antares_files)} file .msi)",
+                    "path": downloaded_dir,
+                    "type": "folder_content",
+                    "files": antares_files,
+                    "size_bytes": total_size,
+                    "size_mb": round(total_size / (1024 * 1024), 2),
+                    "risk": "Rischio basso",
+                    "risk_color": "green",
+                    "description": "Pacchetto di installazione temporaneo mai ripulito dopo il completamento del setup."
+                })
 
     # 7. Scansione Programmi all'Avvio (Startup Optimizer)
     if "startup" in modules:
@@ -625,12 +628,28 @@ def move_to_quarantine(item_ids, all_findings):
     user_prof = get_user_profile()
     protected_rules = user_prof.get("protected_paths", [])
     
+    def is_subpath(candidate, parent):
+        try:
+            cand = os.path.normcase(os.path.realpath(os.path.abspath(candidate)))
+            par = os.path.normcase(os.path.realpath(os.path.abspath(parent)))
+            return os.path.commonpath([cand, par]) == par
+        except (ValueError, OSError):
+            return False
+
+    user_home = os.path.expanduser("~")
+    # Eccezioni esplicitamente autorizzate dallo scanner (es. crash dump di Cubase in Documents)
+    allowed_exceptions = [
+        os.path.join(user_home, "Documents", "Steinberg", "CrashDumps")
+    ]
+
     def is_path_protected(path):
-        norm_path = os.path.normcase(os.path.abspath(path))
+        for exc in allowed_exceptions:
+            if is_subpath(path, exc):
+                return False
         for rule in protected_rules:
-            for rp in rule.get("real_paths", []):
-                norm_rp = os.path.normcase(os.path.abspath(rp))
-                if norm_path.startswith(norm_rp):
+            real_paths = rule.get("real_paths", []) if isinstance(rule, dict) else [rule]
+            for rp in real_paths:
+                if is_subpath(path, rp):
                     return True
         return False
 
@@ -662,16 +681,16 @@ def move_to_quarantine(item_ids, all_findings):
                     try:
                         # Sposta in quarantena
                         shutil.move(source_path, dest_path)
-                        file_size = os.path.getsize(dest_path) if os.path.exists(dest_path) else 0
-                        if "files" in f:
-                            # per file we might not have individual sizes, let's calculate or just use total/len
-                            pass
+                        if os.path.isdir(dest_path):
+                            file_size = get_dir_size(dest_path)
+                        else:
+                            file_size = os.path.getsize(dest_path) if os.path.exists(dest_path) else 0
+
                         cur.execute(
                             "INSERT INTO quarantine_ledger (batch_id, original_path, quarantined_path, file_size_bytes, status, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
                             (batch_id, source_path, dest_path, file_size, "QUARANTINED", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                         )
                         moved_count += 1
-                        # Wait, we need to accumulate total_freed_bytes correctly.
                         total_freed_bytes += file_size
                     except Exception as e:
                         errors.append(f"Errore su {source_path}: {str(e)}")
@@ -687,12 +706,18 @@ def move_to_quarantine(item_ids, all_findings):
             except Exception as e:
                 pass
 
-                    
     conn.commit()
     conn.close()
     
+    status = "success"
+    if errors and moved_count > 0:
+        status = "partial"
+    elif errors and moved_count == 0:
+        status = "failed"
+
     return {
-        "success": True,
+        "success": moved_count > 0,
+        "status": status,
         "batch_id": batch_id,
         "moved_count": moved_count,
         "freed_mb": round(total_freed_bytes / (1024 * 1024), 2),
