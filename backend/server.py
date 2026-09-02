@@ -1117,6 +1117,19 @@ class PCMioHandler(BaseHTTPRequestHandler):
                 self.wfile.write(content)
             else:
                 self._send_json(404, {"error": "Logo non trovato"})
+        elif self.path == "/designpen.js":
+            js_file = os.path.join(PROJECT_DIR, "designpen.js")
+            if os.path.exists(js_file):
+                with open(js_file, "rb") as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/javascript; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_header("Access-Control-Allow-Origin", "http://127.0.0.1:8765")
+                self.end_headers()
+                self.wfile.write(content)
+            else:
+                self._send_json(404, {"error": "designpen.js non trovato"})
         elif self.path == "/api/status":
             ollama_status = check_ollama()
             total, used, free = shutil.disk_usage("C:\\")
